@@ -1,4 +1,6 @@
 
+import { Link } from "react-router-dom";
+
 function Home() {
   return (
     <>
@@ -18,12 +20,13 @@ function Home() {
         </p>
 
         <div className="hero-buttons">
-          <a href="/report" className="btn btn-primary">
+          <Link to="/report" className="btn btn-primary">
             Report an Item
-          </a>
-          <a href="/reports" className="btn btn-secondary">
+          </Link>
+
+          <Link to="/reports" className="btn btn-secondary">
             Browse Reports
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -34,19 +37,25 @@ function Home() {
           <article className="feature-card">
             <div className="feature-icon">📢</div>
             <h3>Report an Item</h3>
-            <p>Share details about something you lost or found on campus.</p>
+            <p>
+              Share details about something you lost or found on campus.
+            </p>
           </article>
 
           <article className="feature-card">
             <div className="feature-icon">🔎</div>
             <h3>Browse Reports</h3>
-            <p>Explore reports to search for your missing belongings.</p>
+            <p>
+              Explore reports to search for your missing belongings.
+            </p>
           </article>
 
           <article className="feature-card">
             <div className="feature-icon">🤝</div>
             <h3>Reconnect</h3>
-            <p>Help belongings find their way back to their owners.</p>
+            <p>
+              Help belongings find their way back to their owners.
+            </p>
           </article>
         </div>
       </section>
