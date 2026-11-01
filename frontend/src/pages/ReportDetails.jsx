@@ -2,45 +2,113 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+const API_URL = "https://ends-texture-justify-miles.trycloudflare.com";
+
 function ReportDetails() {
     const { id } = useParams();
+
     const [item, setItem] = useState(null);
-    const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
-        fetch(`http://localhost:5000/api/items/${id}`)
-            .then((response) => {
+        async function loadDetails() {
+            try {
+                const response = await fetch(`${API_URL}/api/items/${id}`);
+                const result = await response.json();
+
                 if (!response.ok) {
-                    throw new Error("Report not found.");
+                    throw new Error(
+                        result.message || "Could not load report."
+                    );
                 }
-                return response.json();
-            })
-            .then((data) => {
-                setItem(data);
+
+                setItem(result);
+            } catch (err) {
+                setError(err.message);
+            } finally {
                 setLoading(false);
-            })
-            .catch(() => {
-                setError("Could not load this report.");
-                setLoading(false);
-            });
+            }
+        }
+
+        loadDetails();
     }, [id]);
 
-    if (loading) return <div className="report-placeholder"><h2>Loading...</h2></div>;
-    if (error) return <div className="report-placeholder"><h2>{error}</h2><Link to="/reports">Back to Reports</Link></div>;
+    function displayDate(dateValue) {
+        if (!dateValue) return "Not provided";
+
+        const dateString = String(dateValue).slice(0, 10);
+        const [year, month, day] = dateString.split("-");
+
+        if (!year || !month || !day) return dateString;
+
+        return `${day}-${month}-${year}`;
+    }
+
+    if (loading) {
+        return <div className="report-placeholder">Loading report...</div>;
+    }
+
+    if (error || !item) {
+        return (
+            <div className="report-placeholder">
+                <h2>Report not found</h2>
+                <p>{error}</p>
+                <Link to="/reports">Back to Browse Reports</Link>
+            </div>
+        );
+    }
 
     return (
-        <div className="report-placeholder">
-            <h1>Report Details</h1>
-            <div className="report-card">
-                <h2>{item.item_name}</h2>
-                <p><strong>Type:</strong> {item.report_type}</p>
-                <p><strong>Description:</strong> {item.description}</p>
-                <p><strong>Location:</strong> {item.location}</p>
-                <p><strong>Date:</strong> {String(item.item_date).slice(0, 10)}</p>
-                <p><strong>Contact:</strong> {item.contact}</p>
+        <div className="report-details-page">
+            <Link to="/reports" className="back-link">
+                ← Back to Browse Reports
+            </Link>
+
+            <div className="report-details-card">
+                {item.image_path && (
+                    <img
+                        className="report-details-image"
+                        src={`${API_URL}${item.image_path}`}
+                        alt={item.item_name}
+                    />
+                )}
+
+                <div className="report-details-content">
+                    <span className={`report-badge ${item.report_type}`}>
+                        {item.report_type === "lost"
+                            ? "Lost Item"
+                            : "Found Item"}
+                    </span>
+
+                    <h1>{item.item_name}</h1>
+
+                    <p>
+                        <strong>Description:</strong>{" "}
+                        {item.description || "Not provided"}
+                    </p>
+
+                    <p>
+                        <strong>Location:</strong>{" "}
+                        {item.location || "Not provided"}
+                    </p>
+
+                    <p>
+                        <strong>Date:</strong>{" "}
+                        {displayDate(item.item_date || item.date)}
+                    </p>
+
+                    <p>
+                        <strong>Contact:</strong>{" "}
+                        {item.contact || "Not provided"}
+                    </p>
+
+                    <p>
+                        <strong>Status:</strong>{" "}
+                        {item.status === "Resolved" ? "Returned" : "Active"}
+                    </p>
+                </div>
             </div>
-            <p><Link to="/reports">← Back to Reports</Link></p>
         </div>
     );
 }
