@@ -1,3 +1,4 @@
+
 import {
     BrowserRouter,
     Routes,
@@ -115,7 +116,7 @@ function AppContent() {
 
 function App() {
     return (
-        <BrowserRouter>
+        <BrowserRouter basename="/CampusLoop">
             <AuthProvider>
                 <AppContent />
             </AuthProvider>
