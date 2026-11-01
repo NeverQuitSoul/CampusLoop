@@ -1,11 +1,40 @@
+
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>CampusLoop</title>
+
+    <script>
+      (function () {
+        const search = window.location.search;
+
+        if (search.startsWith("?/")) {
+          const route = search.slice(2).replace(/~and~/g, "&");
+
+          const queryIndex = route.indexOf("&");
+          const path = queryIndex === -1
+            ? route
+            : route.slice(0, queryIndex);
+
+          const query = queryIndex === -1
+            ? ""
+            : route.slice(queryIndex + 1);
+
+          window.history.replaceState(
+            null,
+            "",
+            "/CampusLoop/" + path +
+            (query ? "?" + query : "") +
+            window.location.hash
+          );
+        }
+      })();
+    </script>
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>

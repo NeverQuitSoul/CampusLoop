@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CampusLoop</title>
+  <script>
+    const base = "/CampusLoop";
+    const path = window.location.pathname;
+    const route = path.startsWith(base)
+      ? path.slice(base.length)
+      : "";
+
+    const query = window.location.search;
+
+    window.location.replace(
+      base + "/?/" +
+      route.replace(/^\/+/, "") +
+      (query ? "&" + query.slice(1) : "") +
+      window.location.hash
+    );
+  </script>
+</head>
+<body>
+  Redirecting to CampusLoop...
+</body>
+</html>
