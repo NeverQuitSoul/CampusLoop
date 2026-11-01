@@ -1,8 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-
-const API_URL = "https://ends-texture-justify-miles.trycloudflare.com";
+import { API_URL } from "../api";
 
 function ReportDetails() {
     const { id } = useParams();

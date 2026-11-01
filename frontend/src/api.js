@@ -1,2 +1,2 @@
 export const API_URL =
-    "https://charges-forth-groove-repairs.trycloudflare.com";
+    "https://campusloop-0a22.onrender.com";
