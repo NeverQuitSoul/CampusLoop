@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
@@ -30,13 +29,23 @@ if (!fs.existsSync(uploadDirectory)) {
 
 app.use("/uploads", express.static(uploadDirectory));
 
-// Database connection
+const useDatabaseSSL = process.env.DB_SSL === "true";
+
 const db = mysql.createConnection({
     host: process.env.DB_HOST || "localhost",
+    port: Number(process.env.DB_PORT || (useDatabaseSSL ? 4000 : 3306)),
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "campusloop",
-    dateStrings: true
+    dateStrings: true,
+    ...(useDatabaseSSL
+        ? {
+              ssl: {
+                  ca: fs.readFileSync(path.join(__dirname, "isrgrootx1.pem")),
+                  minVersion: "TLSv1.2"
+              }
+          }
+        : {})
 });
 
 db.connect((err) => {
@@ -47,7 +56,7 @@ db.connect((err) => {
     }
 });
 
-// Image upload configuration
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadDirectory);
@@ -78,7 +87,6 @@ const upload = multer({
     }
 });
 
-// Authentication middleware
 function authenticateToken(req, res, next) {
     const authHeader = req.headers.authorization;
 
@@ -102,7 +110,6 @@ function authenticateToken(req, res, next) {
     });
 }
 
-// Admin-only middleware
 function checkAdmin(req, res, next) {
     if (!req.user || req.user.role !== "admin") {
         return res.status(403).json({
@@ -113,7 +120,7 @@ function checkAdmin(req, res, next) {
     next();
 }
 
-// Student registration
+
 app.post("/api/auth/register", async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -157,29 +164,25 @@ app.post("/api/auth/register", async (req, res) => {
             VALUES (?, ?, ?, 'student')
         `;
 
-        db.query(
-            sql,
-            [cleanName, cleanEmail, hashedPassword],
-            (error, result) => {
-                if (error) {
-                    if (error.code === "ER_DUP_ENTRY") {
-                        return res.status(409).json({
-                            message: "An account with this email already exists."
-                        });
-                    }
-
-                    console.error(error);
-
-                    return res.status(500).json({
-                        message: "Could not create your account."
+        db.query(sql, [cleanName, cleanEmail, hashedPassword], (error) => {
+            if (error) {
+                if (error.code === "ER_DUP_ENTRY") {
+                    return res.status(409).json({
+                        message: "An account with this email already exists."
                     });
                 }
 
-                res.status(201).json({
-                    message: "Student account created successfully!"
+                console.error(error);
+
+                return res.status(500).json({
+                    message: "Could not create your account."
                 });
             }
-        );
+
+            res.status(201).json({
+                message: "Student account created successfully!"
+            });
+        });
     } catch (error) {
         console.error(error);
 
@@ -189,7 +192,7 @@ app.post("/api/auth/register", async (req, res) => {
     }
 });
 
-// Student login
+
 app.post("/api/auth/login", (req, res) => {
     const { email, password } = req.body;
 
@@ -260,7 +263,7 @@ app.post("/api/auth/login", (req, res) => {
     });
 });
 
-// Separate administrator login
+
 app.post("/api/auth/admin-login", (req, res) => {
     const { email, password } = req.body;
 
@@ -331,14 +334,14 @@ app.post("/api/auth/admin-login", (req, res) => {
     });
 });
 
-// Get currently logged-in user
+
 app.get("/api/auth/me", authenticateToken, (req, res) => {
     res.json({
         user: req.user
     });
 });
 
-// Public report fields. Contact details are not included.
+
 const publicItemFields = `
     id,
     report_type,
@@ -351,12 +354,10 @@ const publicItemFields = `
     image_path
 `;
 
-// Backend status
 app.get("/", (req, res) => {
     res.send("CampusLoop Backend is running!");
 });
 
-// Get active and returned reports
 app.get("/api/items", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -377,7 +378,6 @@ app.get("/api/items", (req, res) => {
     });
 });
 
-// Get reports by category
 app.get("/api/items/category/:type", (req, res) => {
     const type = req.params.type.toLowerCase();
 
@@ -408,7 +408,6 @@ app.get("/api/items/category/:type", (req, res) => {
     });
 });
 
-// Get returned reports
 app.get("/api/items/completed", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -430,7 +429,6 @@ app.get("/api/items/completed", (req, res) => {
     });
 });
 
-// Get one report
 app.get("/api/items/:id", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -457,7 +455,6 @@ app.get("/api/items/:id", (req, res) => {
     });
 });
 
-// Submit report. Student login is required.
 app.post(
     "/api/items",
     authenticateToken,
@@ -564,7 +561,6 @@ app.post(
     }
 );
 
-// Mark report as returned. Admin only.
 app.put(
     "/api/items/:id/resolve",
     authenticateToken,
@@ -598,7 +594,7 @@ app.put(
     }
 );
 
-// Delete report. Admin only.
+
 app.delete(
     "/api/items/:id",
     authenticateToken,
@@ -657,7 +653,6 @@ app.delete(
     }
 );
 
-// Handle unexpected errors
 app.use((err, req, res, next) => {
     console.error(err);
 
