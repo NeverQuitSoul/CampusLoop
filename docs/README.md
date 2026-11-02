@@ -1,8 +1,6 @@
 ## Project Presentation
 
-The CampusLoop project presentation is available below:
-
-[View / Download CampusLoop Presentation](docs/CampusLoop_Presentation.pptx)
+[Download CampusLoop Presentation](https://github.com/NeverQuitSoul/CampusLoop/blob/main/docs/CampusLoop_Presentation.pptx)
 
 ## Live Project
 
