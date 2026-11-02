@@ -1,6 +1,17 @@
+
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../api";
+
+function getImageUrl(imagePath) {
+    if (!imagePath) return "";
+
+    if (imagePath.startsWith("http")) {
+        return imagePath;
+    }
+
+    return `${API_URL}${imagePath}`;
+}
 
 function BrowseReports() {
     const { token, user } = useAuth();
@@ -358,9 +369,12 @@ function BrowseReports() {
 
                             {item.image_path && (
                                 <img
-                                    src={`${API_URL}${item.image_path}`}
+                                    src={getImageUrl(item.image_path)}
                                     alt={item.item_name}
                                     className="report-card-image"
+                                    onError={event => {
+                                        event.currentTarget.style.display = "none";
+                                    }}
                                 />
                             )}
 
@@ -425,9 +439,12 @@ function BrowseReports() {
 
                         {selectedItem.image_path && (
                             <img
-                                src={`${API_URL}${selectedItem.image_path}`}
+                                src={getImageUrl(selectedItem.image_path)}
                                 alt={selectedItem.item_name}
                                 className="report-modal-image"
+                                onError={event => {
+                                    event.currentTarget.style.display = "none";
+                                }}
                             />
                         )}
 

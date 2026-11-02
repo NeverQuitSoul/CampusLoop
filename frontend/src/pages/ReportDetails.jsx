@@ -3,6 +3,16 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { API_URL } from "../api";
 
+function getImageUrl(imagePath) {
+    if (!imagePath) return "";
+
+    if (imagePath.startsWith("http")) {
+        return imagePath;
+    }
+
+    return `${API_URL}${imagePath}`;
+}
+
 function ReportDetails() {
     const { id } = useParams();
 
@@ -68,8 +78,11 @@ function ReportDetails() {
                 {item.image_path && (
                     <img
                         className="report-details-image"
-                        src={`${API_URL}${item.image_path}`}
+                        src={getImageUrl(item.image_path)}
                         alt={item.item_name}
+                        onError={event => {
+                            event.currentTarget.style.display = "none";
+                        }}
                     />
                 )}
 

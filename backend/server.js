@@ -1,13 +1,13 @@
-
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 require("dotenv").config();
 
@@ -18,6 +18,12 @@ if (!process.env.JWT_SECRET) {
     console.error("JWT_SECRET is missing from environment variables.");
     process.exit(1);
 }
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 app.use(cors());
 app.use(express.json());
@@ -30,7 +36,6 @@ if (!fs.existsSync(uploadDirectory)) {
 
 app.use("/uploads", express.static(uploadDirectory));
 
-// MySQL connection pool
 const useDatabaseSSL = process.env.DB_SSL === "true";
 
 const db = mysql.createPool({
@@ -61,7 +66,6 @@ const db = mysql.createPool({
         : {})
 });
 
-// Check database connection
 db.getConnection((err, connection) => {
     if (err) {
         console.error("Database connection failed:", err);
@@ -71,15 +75,12 @@ db.getConnection((err, connection) => {
     }
 });
 
-// Image upload configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDirectory);
-    },
-
-    filename: (req, file, cb) => {
-        const extension = path.extname(file.originalname).toLowerCase();
-        cb(null, `${crypto.randomUUID()}${extension}`);
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: "campusloop",
+        allowed_formats: ["jpg", "jpeg", "png", "webp"],
+        resource_type: "image"
     }
 });
 
@@ -105,7 +106,65 @@ const upload = multer({
     }
 });
 
-// Student authentication
+async function deleteCloudinaryImage(publicId) {
+    if (!publicId) return;
+
+    try {
+        await cloudinary.uploader.destroy(publicId);
+        console.log("Cloudinary image deleted:", publicId);
+    } catch (error) {
+        console.error("Cloudinary image deletion failed:", error);
+    }
+}
+
+async function removeUploadedFile(file) {
+    if (!file) return;
+
+    if (file.filename) {
+        await deleteCloudinaryImage(file.filename);
+    }
+}
+
+async function removeStoredImage(imagePath) {
+    if (!imagePath) return;
+
+    if (imagePath.includes("res.cloudinary.com")) {
+        try {
+            const pathname = new URL(imagePath).pathname;
+            const uploadIndex = pathname.indexOf("/upload/");
+
+            if (uploadIndex === -1) return;
+
+            let publicId = pathname.substring(uploadIndex + 8);
+
+            publicId = publicId.replace(/^v\d+\//, "");
+
+            publicId = publicId.replace(/\.[^/.]+$/, "");
+
+            await deleteCloudinaryImage(publicId);
+        } catch (error) {
+            console.error("Could not process Cloudinary image path:", error);
+        }
+
+        return;
+    }
+
+    if (imagePath.startsWith("/uploads/")) {
+        const imageFile = path.join(
+            uploadDirectory,
+            path.basename(imagePath)
+        );
+
+        if (fs.existsSync(imageFile)) {
+            fs.unlink(imageFile, (error) => {
+                if (error) {
+                    console.error("Local image deletion failed:", error);
+                }
+            });
+        }
+    }
+}
+
 function authenticateToken(req, res, next) {
     const authHeader = req.headers.authorization;
 
@@ -129,7 +188,6 @@ function authenticateToken(req, res, next) {
     });
 }
 
-// Admin authorization
 function checkAdmin(req, res, next) {
     if (!req.user || req.user.role !== "admin") {
         return res.status(403).json({
@@ -140,7 +198,6 @@ function checkAdmin(req, res, next) {
     next();
 }
 
-// Student registration
 app.post("/api/auth/register", async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -212,7 +269,6 @@ app.post("/api/auth/register", async (req, res) => {
     }
 });
 
-// Student login
 app.post("/api/auth/login", (req, res) => {
     const { email, password } = req.body;
 
@@ -283,7 +339,6 @@ app.post("/api/auth/login", (req, res) => {
     });
 });
 
-// Admin login
 app.post("/api/auth/admin-login", (req, res) => {
     const { email, password } = req.body;
 
@@ -354,14 +409,12 @@ app.post("/api/auth/admin-login", (req, res) => {
     });
 });
 
-// Get logged-in user
 app.get("/api/auth/me", authenticateToken, (req, res) => {
     res.json({
         user: req.user
     });
 });
 
-// Common public item fields
 const publicItemFields = `
     id,
     report_type,
@@ -374,12 +427,10 @@ const publicItemFields = `
     image_path
 `;
 
-// Backend home route
 app.get("/", (req, res) => {
     res.send("CampusLoop Backend is running!");
 });
 
-// Get all reports
 app.get("/api/items", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -400,7 +451,6 @@ app.get("/api/items", (req, res) => {
     });
 });
 
-// Get reports by category
 app.get("/api/items/category/:type", (req, res) => {
     const type = req.params.type.toLowerCase();
 
@@ -431,7 +481,6 @@ app.get("/api/items/category/:type", (req, res) => {
     });
 });
 
-// Get completed reports
 app.get("/api/items/completed", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -453,7 +502,6 @@ app.get("/api/items/completed", (req, res) => {
     });
 });
 
-// Get one report by ID
 app.get("/api/items/:id", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -480,7 +528,6 @@ app.get("/api/items/:id", (req, res) => {
     });
 });
 
-// Submit a new report
 app.post(
     "/api/items",
     authenticateToken,
@@ -497,9 +544,7 @@ app.post(
     },
     (req, res) => {
         if (req.user.role !== "student") {
-            if (req.file) {
-                fs.unlink(req.file.path, () => {});
-            }
+            removeUploadedFile(req.file);
 
             return res.status(403).json({
                 message: "Only students can submit reports."
@@ -524,18 +569,14 @@ app.post(
             !date ||
             !contact
         ) {
-            if (req.file) {
-                fs.unlink(req.file.path, () => {});
-            }
+            removeUploadedFile(req.file);
 
             return res.status(400).json({
                 message: "Please provide all required report details."
             });
         }
 
-        const imagePath = req.file
-            ? `/uploads/${req.file.filename}`
-            : null;
+        const imagePath = req.file ? req.file.path : null;
 
         const sql = `
             INSERT INTO items
@@ -569,9 +610,7 @@ app.post(
                 if (error) {
                     console.error("Submit report database error:", error);
 
-                    if (req.file) {
-                        fs.unlink(req.file.path, () => {});
-                    }
+                    removeUploadedFile(req.file);
 
                     return res.status(500).json({
                         message: "Could not save the report."
@@ -587,7 +626,6 @@ app.post(
     }
 );
 
-// Mark report as returned
 app.put(
     "/api/items/:id/resolve",
     authenticateToken,
@@ -621,7 +659,6 @@ app.put(
     }
 );
 
-// Delete report
 app.delete(
     "/api/items/:id",
     authenticateToken,
@@ -661,16 +698,7 @@ app.delete(
                     });
                 }
 
-                if (imagePath) {
-                    const imageFile = path.join(
-                        uploadDirectory,
-                        path.basename(imagePath)
-                    );
-
-                    if (fs.existsSync(imageFile)) {
-                        fs.unlink(imageFile, () => {});
-                    }
-                }
+                removeStoredImage(imagePath);
 
                 res.json({
                     message: "Report deleted successfully."
@@ -680,7 +708,6 @@ app.delete(
     }
 );
 
-// General error handler
 app.use((err, req, res, next) => {
     console.error("Server error:", err);
 
@@ -693,7 +720,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
 app.listen(PORT, () => {
     console.log(`CampusLoop server running on port ${PORT}`);
 });
