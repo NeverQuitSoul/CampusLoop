@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
@@ -14,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 if (!process.env.JWT_SECRET) {
-    console.error("JWT_SECRET is missing from .env");
+    console.error("JWT_SECRET is missing from environment variables.");
     process.exit(1);
 }
 
@@ -29,38 +30,53 @@ if (!fs.existsSync(uploadDirectory)) {
 
 app.use("/uploads", express.static(uploadDirectory));
 
+// MySQL connection pool
 const useDatabaseSSL = process.env.DB_SSL === "true";
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
     host: process.env.DB_HOST || "localhost",
     port: Number(process.env.DB_PORT || (useDatabaseSSL ? 4000 : 3306)),
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "campusloop",
     dateStrings: true,
+
+    waitForConnections: true,
+    connectionLimit: 10,
+    maxIdle: 5,
+    idleTimeout: 30000,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+
     ...(useDatabaseSSL
         ? {
               ssl: {
-                  ca: fs.readFileSync(path.join(__dirname, "isrgrootx1.pem")),
+                  ca: fs.readFileSync(
+                      path.join(__dirname, "isrgrootx1.pem")
+                  ),
                   minVersion: "TLSv1.2"
               }
           }
         : {})
 });
 
-db.connect((err) => {
+// Check database connection
+db.getConnection((err, connection) => {
     if (err) {
         console.error("Database connection failed:", err);
     } else {
         console.log("Connected to CampusLoop database.");
+        connection.release();
     }
 });
 
-
+// Image upload configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadDirectory);
     },
+
     filename: (req, file, cb) => {
         const extension = path.extname(file.originalname).toLowerCase();
         cb(null, `${crypto.randomUUID()}${extension}`);
@@ -69,9 +85,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage,
+
     limits: {
         fileSize: 5 * 1024 * 1024
     },
+
     fileFilter: (req, file, cb) => {
         const allowedTypes = [
             "image/jpeg",
@@ -87,6 +105,7 @@ const upload = multer({
     }
 });
 
+// Student authentication
 function authenticateToken(req, res, next) {
     const authHeader = req.headers.authorization;
 
@@ -110,6 +129,7 @@ function authenticateToken(req, res, next) {
     });
 }
 
+// Admin authorization
 function checkAdmin(req, res, next) {
     if (!req.user || req.user.role !== "admin") {
         return res.status(403).json({
@@ -120,7 +140,7 @@ function checkAdmin(req, res, next) {
     next();
 }
 
-
+// Student registration
 app.post("/api/auth/register", async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -172,7 +192,7 @@ app.post("/api/auth/register", async (req, res) => {
                     });
                 }
 
-                console.error(error);
+                console.error("Registration database error:", error);
 
                 return res.status(500).json({
                     message: "Could not create your account."
@@ -184,7 +204,7 @@ app.post("/api/auth/register", async (req, res) => {
             });
         });
     } catch (error) {
-        console.error(error);
+        console.error("Registration error:", error);
 
         res.status(500).json({
             message: "Registration failed."
@@ -192,7 +212,7 @@ app.post("/api/auth/register", async (req, res) => {
     }
 });
 
-
+// Student login
 app.post("/api/auth/login", (req, res) => {
     const { email, password } = req.body;
 
@@ -213,7 +233,7 @@ app.post("/api/auth/login", (req, res) => {
 
     db.query(sql, [cleanEmail], async (error, results) => {
         if (error) {
-            console.error(error);
+            console.error("Login database error:", error);
 
             return res.status(500).json({
                 message: "Login failed."
@@ -263,13 +283,13 @@ app.post("/api/auth/login", (req, res) => {
     });
 });
 
-
+// Admin login
 app.post("/api/auth/admin-login", (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
         return res.status(400).json({
-            message: "Please enter administrator email and password."
+            message: "Please enter your email and password."
         });
     }
 
@@ -284,7 +304,7 @@ app.post("/api/auth/admin-login", (req, res) => {
 
     db.query(sql, [cleanEmail], async (error, results) => {
         if (error) {
-            console.error(error);
+            console.error("Admin login database error:", error);
 
             return res.status(500).json({
                 message: "Administrator login failed."
@@ -334,14 +354,14 @@ app.post("/api/auth/admin-login", (req, res) => {
     });
 });
 
-
+// Get logged-in user
 app.get("/api/auth/me", authenticateToken, (req, res) => {
     res.json({
         user: req.user
     });
 });
 
-
+// Common public item fields
 const publicItemFields = `
     id,
     report_type,
@@ -354,10 +374,12 @@ const publicItemFields = `
     image_path
 `;
 
+// Backend home route
 app.get("/", (req, res) => {
     res.send("CampusLoop Backend is running!");
 });
 
+// Get all reports
 app.get("/api/items", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -367,7 +389,7 @@ app.get("/api/items", (req, res) => {
 
     db.query(sql, (error, results) => {
         if (error) {
-            console.error(error);
+            console.error("Fetch reports database error:", error);
 
             return res.status(500).json({
                 message: "Could not fetch reports."
@@ -378,6 +400,7 @@ app.get("/api/items", (req, res) => {
     });
 });
 
+// Get reports by category
 app.get("/api/items/category/:type", (req, res) => {
     const type = req.params.type.toLowerCase();
 
@@ -397,7 +420,7 @@ app.get("/api/items/category/:type", (req, res) => {
 
     db.query(sql, [type], (error, results) => {
         if (error) {
-            console.error(error);
+            console.error("Category reports database error:", error);
 
             return res.status(500).json({
                 message: "Could not fetch reports."
@@ -408,6 +431,7 @@ app.get("/api/items/category/:type", (req, res) => {
     });
 });
 
+// Get completed reports
 app.get("/api/items/completed", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -418,7 +442,7 @@ app.get("/api/items/completed", (req, res) => {
 
     db.query(sql, (error, results) => {
         if (error) {
-            console.error(error);
+            console.error("Completed reports database error:", error);
 
             return res.status(500).json({
                 message: "Could not fetch returned items."
@@ -429,6 +453,7 @@ app.get("/api/items/completed", (req, res) => {
     });
 });
 
+// Get one report by ID
 app.get("/api/items/:id", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
@@ -438,7 +463,7 @@ app.get("/api/items/:id", (req, res) => {
 
     db.query(sql, [req.params.id], (error, results) => {
         if (error) {
-            console.error(error);
+            console.error("Single report database error:", error);
 
             return res.status(500).json({
                 message: "Could not fetch report."
@@ -455,6 +480,7 @@ app.get("/api/items/:id", (req, res) => {
     });
 });
 
+// Submit a new report
 app.post(
     "/api/items",
     authenticateToken,
@@ -541,7 +567,7 @@ app.post(
             ],
             (error, result) => {
                 if (error) {
-                    console.error(error);
+                    console.error("Submit report database error:", error);
 
                     if (req.file) {
                         fs.unlink(req.file.path, () => {});
@@ -561,6 +587,7 @@ app.post(
     }
 );
 
+// Mark report as returned
 app.put(
     "/api/items/:id/resolve",
     authenticateToken,
@@ -574,7 +601,7 @@ app.put(
 
         db.query(sql, [req.params.id], (error, result) => {
             if (error) {
-                console.error(error);
+                console.error("Resolve report database error:", error);
 
                 return res.status(500).json({
                     message: "Could not update report."
@@ -594,7 +621,7 @@ app.put(
     }
 );
 
-
+// Delete report
 app.delete(
     "/api/items/:id",
     authenticateToken,
@@ -608,7 +635,7 @@ app.delete(
 
         db.query(selectSql, [req.params.id], (selectError, results) => {
             if (selectError) {
-                console.error(selectError);
+                console.error("Find report before delete error:", selectError);
 
                 return res.status(500).json({
                     message: "Could not find report."
@@ -627,7 +654,7 @@ app.delete(
 
             db.query(deleteSql, [req.params.id], (deleteError) => {
                 if (deleteError) {
-                    console.error(deleteError);
+                    console.error("Delete report database error:", deleteError);
 
                     return res.status(500).json({
                         message: "Could not delete report."
@@ -653,14 +680,20 @@ app.delete(
     }
 );
 
+// General error handler
 app.use((err, req, res, next) => {
-    console.error(err);
+    console.error("Server error:", err);
+
+    if (res.headersSent) {
+        return next(err);
+    }
 
     res.status(500).json({
         message: "Something went wrong on the server."
     });
 });
 
+// Start server
 app.listen(PORT, () => {
     console.log(`CampusLoop server running on port ${PORT}`);
 });
