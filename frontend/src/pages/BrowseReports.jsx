@@ -239,164 +239,255 @@ function BrowseReports() {
 
     if (loading) {
         return (
-            <div className="report-placeholder">
-                <h2>Loading reports...</h2>
+            <div className="reports-page">
+                <div className="reports-loading">
+                    <div className="loading-symbol">↻</div>
+                    <h2>Finding campus reports...</h2>
+                    <p>Just a moment while we load the latest updates.</p>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="report-placeholder">
-                <h2>{error}</h2>
-
-                <button type="button" onClick={loadReports}>
-                    Try Again
-                </button>
+            <div className="reports-page">
+                <div className="reports-loading">
+                    <div className="empty-icon">!</div>
+                    <h2>Something went wrong</h2>
+                    <p>{error}</p>
+                    <button
+                        type="button"
+                        className="market-primary-button"
+                        onClick={loadReports}
+                    >
+                        Try Again
+                    </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="report-placeholder">
-            <h1>Browse Reports</h1>
+        <main className="reports-page">
+            <section className="reports-heading">
+                <div>
+                    <span className="section-eyebrow">
+                        CAMPUS COMMUNITY MARKETPLACE
+                    </span>
 
-            <p>
-                View lost and found items reported on CampusLoop.
-            </p>
+                    <h1>
+                        Find what’s <span>yours.</span>
+                    </h1>
+
+                    <p>
+                        Browse lost and found belongings shared by your
+                        campus community.
+                    </p>
+                </div>
+
+                <div className="reports-heading-icon">
+                    <span>⌕</span>
+                    <small>Search. Connect. Reunite.</small>
+                </div>
+            </section>
 
             {isAdmin && (
-                <p className="admin-notice">
-                    Administrator mode: You can manage reports.
-                </p>
+                <div className="admin-notice">
+                    <span>⚙</span>
+                    Administrator mode is active. You can manage campus reports.
+                </div>
             )}
 
-            <div className="dashboard-stats">
+            <section className="dashboard-stats">
                 <div className="stat-card lost-stat">
-                    <h2>{lostCount}</h2>
-                    <p>Lost Items</p>
+                    <div className="stat-icon">⌕</div>
+                    <div>
+                        <p>Lost items</p>
+                        <h2>{lostCount}</h2>
+                        <span>Waiting to be found</span>
+                    </div>
                 </div>
 
                 <div className="stat-card found-stat">
-                    <h2>{foundCount}</h2>
-                    <p>Found Items</p>
+                    <div className="stat-icon">✦</div>
+                    <div>
+                        <p>Found items</p>
+                        <h2>{foundCount}</h2>
+                        <span>Reported by students</span>
+                    </div>
                 </div>
 
                 <div className="stat-card returned-stat">
-                    <h2>{returnedCount}</h2>
-                    <p>Returned Items</p>
+                    <div className="stat-icon">✓</div>
+                    <div>
+                        <p>Returned items</p>
+                        <h2>{returnedCount}</h2>
+                        <span>Successfully reunited</span>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <div className="report-tabs">
-                <button
-                    type="button"
-                    className={activeTab === "lost" ? "active" : ""}
-                    onClick={() => changeTab("lost")}
-                >
-                    Lost ({lostCount})
-                </button>
+            <section className="marketplace-section">
+                <div className="marketplace-topline">
+                    <div>
+                        <span className="section-eyebrow">EXPLORE THE MARKETPLACE</span>
+                        <h2>Campus belongings</h2>
+                    </div>
 
-                <button
-                    type="button"
-                    className={activeTab === "found" ? "active" : ""}
-                    onClick={() => changeTab("found")}
-                >
-                    Found ({foundCount})
-                </button>
+                    <span className="report-total">
+                        {sortedItems.length} results
+                    </span>
+                </div>
 
-                <button
-                    type="button"
-                    className={activeTab === "returned" ? "active" : ""}
-                    onClick={() => changeTab("returned")}
-                >
-                    Returned ({returnedCount})
-                </button>
-            </div>
+                <div className="marketplace-toolbar">
+                    <div className="report-tabs">
+                        <button
+                            type="button"
+                            className={activeTab === "lost" ? "active" : ""}
+                            onClick={() => changeTab("lost")}
+                        >
+                            <span>⌕</span> Lost
+                            <span className="tab-count">{lostCount}</span>
+                        </button>
 
-            <div className="reports-controls">
-                <input
-                    type="search"
-                    className="reports-search"
-                    placeholder="Search by item, description or location..."
-                    value={searchTerm}
-                    onChange={event => setSearchTerm(event.target.value)}
-                    aria-label="Search reports"
-                />
+                        <button
+                            type="button"
+                            className={activeTab === "found" ? "active" : ""}
+                            onClick={() => changeTab("found")}
+                        >
+                            <span>✦</span> Found
+                            <span className="tab-count">{foundCount}</span>
+                        </button>
 
-                <select
-                    className="reports-filter"
-                    value={sortOrder}
-                    onChange={event => setSortOrder(event.target.value)}
-                    aria-label="Sort reports"
-                >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                </select>
-            </div>
+                        <button
+                            type="button"
+                            className={activeTab === "returned" ? "active" : ""}
+                            onClick={() => changeTab("returned")}
+                        >
+                            <span>✓</span> Returned
+                            <span className="tab-count">{returnedCount}</span>
+                        </button>
+                    </div>
 
-            {actionMessage && (
-                <p role="status" className="form-message">
-                    {actionMessage}
-                </p>
-            )}
+                    <div className="reports-controls">
+                        <div className="search-wrapper">
+                            <span>⌕</span>
+                            <input
+                                type="search"
+                                className="reports-search"
+                                placeholder="Search items or locations..."
+                                value={searchTerm}
+                                onChange={event => setSearchTerm(event.target.value)}
+                                aria-label="Search reports"
+                            />
+                        </div>
 
-            <p>
-                Showing {sortedItems.length} reports
-            </p>
+                        <select
+                            className="reports-filter"
+                            value={sortOrder}
+                            onChange={event => setSortOrder(event.target.value)}
+                            aria-label="Sort reports"
+                        >
+                            <option value="newest">Newest first</option>
+                            <option value="oldest">Oldest first</option>
+                        </select>
+                    </div>
+                </div>
 
-            {sortedItems.length === 0 ? (
-                <p>
-                    {activeTab === "lost"
-                        ? "No lost items have been reported yet."
-                        : activeTab === "found"
-                        ? "No found items have been reported yet."
-                        : "No returned items yet."}
-                </p>
-            ) : (
-                <div className="reports-grid">
-                    {sortedItems.map(item => (
-                        <div className="report-card" key={item.id}>
-                            <span
-                                className={`report-badge ${item.report_type}`}
-                            >
-                                {activeTab === "returned"
-                                    ? "Returned"
-                                    : item.report_type === "lost"
-                                    ? "Lost Item"
-                                    : "Found Item"}
-                            </span>
+                {actionMessage && (
+                    <p role="status" className="form-message">
+                        {actionMessage}
+                    </p>
+                )}
 
-                            {item.image_path && (
-                                <img
-                                    src={getImageUrl(item.image_path)}
-                                    alt={item.item_name}
-                                    className="report-card-image"
-                                    onError={event => {
-                                        event.currentTarget.style.display = "none";
-                                    }}
-                                />
-                            )}
-
-                            <h2>{item.item_name}</h2>
-
-                            <p>{item.location}</p>
-
-                            <p>{displayDate(item)}</p>
-
+                {sortedItems.length === 0 ? (
+                    <div className="marketplace-empty">
+                        <div className="empty-icon">⌕</div>
+                        <h3>
+                            {searchTerm
+                                ? "No matching items found"
+                                : activeTab === "lost"
+                                ? "No lost items yet"
+                                : activeTab === "found"
+                                ? "No found items yet"
+                                : "No returned items yet"}
+                        </h3>
+                        <p>
+                            {searchTerm
+                                ? "Try another item name, description or location."
+                                : "New reports shared by students will appear here."}
+                        </p>
+                        {searchTerm && (
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setSelectedItem(item);
-                                    setActionMessage("");
-                                }}
+                                className="market-secondary-button"
+                                onClick={() => setSearchTerm("")}
                             >
-                                View Details
+                                Clear search
                             </button>
-                        </div>
-                    ))}
-                </div>
-            )}
+                        )}
+                    </div>
+                ) : (
+                    <div className="reports-grid marketplace-grid">
+                        {sortedItems.map(item => (
+                            <article className="report-card marketplace-card" key={item.id}>
+                                <div className="marketplace-image-wrap">
+                                    {item.image_path ? (
+                                        <img
+                                            src={getImageUrl(item.image_path)}
+                                            alt={item.item_name}
+                                            className="report-card-image"
+                                            onError={event => {
+                                                event.currentTarget.style.display = "none";
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="report-image-placeholder">
+                                            <span>▧</span>
+                                            <small>No image available</small>
+                                        </div>
+                                    )}
+
+                                    <span
+                                        className={`report-badge ${item.status === "Resolved" ? "returned" : item.report_type}`}
+                                    >
+                                        {item.status === "Resolved"
+                                            ? "✓ Returned"
+                                            : item.report_type === "lost"
+                                            ? "⌕ Lost item"
+                                            : "✦ Found item"}
+                                    </span>
+                                </div>
+
+                                <div className="marketplace-card-content">
+                                    <div className="marketplace-card-meta">
+                                        <span>📍 {item.location || "Location not provided"}</span>
+                                        <span>{displayDate(item)}</span>
+                                    </div>
+
+                                    <h2>{item.item_name}</h2>
+
+                                    <p className="marketplace-description">
+                                        {item.description || "No description provided."}
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        className="market-view-button"
+                                        onClick={() => {
+                                            setSelectedItem(item);
+                                            setActionMessage("");
+                                        }}
+                                    >
+                                        View details <span>↗</span>
+                                    </button>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </section>
 
             {selectedItem && (
                 <div
@@ -406,35 +497,39 @@ function BrowseReports() {
                     }}
                 >
                     <div
-                        className="campusloop-modal"
+                        className="campusloop-modal marketplace-modal"
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="report-modal-title"
                         onClick={event => event.stopPropagation()}
                     >
                         <div className="campusloop-modal-header">
-                            <h2 id="report-modal-title">
-                                {selectedItem.item_name}
-                            </h2>
+                            <div>
+                                <span className="section-eyebrow">REPORT DETAILS</span>
+                                <h2 id="report-modal-title">
+                                    {selectedItem.item_name}
+                                </h2>
+                            </div>
 
                             <button
                                 type="button"
                                 className="campusloop-modal-close"
                                 disabled={updating}
                                 onClick={() => setSelectedItem(null)}
+                                aria-label="Close details"
                             >
                                 &times;
                             </button>
                         </div>
 
                         <span
-                            className={`report-badge ${selectedItem.report_type}`}
+                            className={`report-badge ${selectedItem.status === "Resolved" ? "returned" : selectedItem.report_type}`}
                         >
                             {selectedItem.status === "Resolved"
-                                ? "Returned"
+                                ? "✓ Returned"
                                 : selectedItem.report_type === "lost"
-                                ? "Lost Item"
-                                : "Found Item"}
+                                ? "⌕ Lost item"
+                                : "✦ Found item"}
                         </span>
 
                         {selectedItem.image_path && (
@@ -449,27 +544,29 @@ function BrowseReports() {
                         )}
 
                         <div className="campusloop-modal-body">
-                            <p>
-                                <strong>Description:</strong>{" "}
-                                {selectedItem.description || "Not provided"}
-                            </p>
+                            <div className="detail-info-row">
+                                <span>DESCRIPTION</span>
+                                <p>{selectedItem.description || "Not provided"}</p>
+                            </div>
 
-                            <p>
-                                <strong>Location:</strong>{" "}
-                                {selectedItem.location || "Not provided"}
-                            </p>
+                            <div className="detail-info-row">
+                                <span>LOCATION</span>
+                                <p>{selectedItem.location || "Not provided"}</p>
+                            </div>
 
-                            <p>
-                                <strong>Date:</strong>{" "}
-                                {displayDate(selectedItem)}
-                            </p>
+                            <div className="detail-info-row">
+                                <span>DATE</span>
+                                <p>{displayDate(selectedItem)}</p>
+                            </div>
 
-                            <p>
-                                <strong>Status:</strong>{" "}
-                                {selectedItem.status === "Resolved"
-                                    ? "Returned"
-                                    : "Active"}
-                            </p>
+                            <div className="detail-info-row">
+                                <span>STATUS</span>
+                                <p>
+                                    {selectedItem.status === "Resolved"
+                                        ? "Returned"
+                                        : "Active"}
+                                </p>
+                            </div>
                         </div>
 
                         <div className="campusloop-modal-footer">
@@ -487,9 +584,7 @@ function BrowseReports() {
                                     onClick={markAsReturned}
                                     disabled={updating}
                                 >
-                                    {updating
-                                        ? "Updating..."
-                                        : "Mark as Returned"}
+                                    {updating ? "Updating..." : "✓ Mark as Returned"}
                                 </button>
                             )}
 
@@ -500,16 +595,14 @@ function BrowseReports() {
                                     onClick={deleteReport}
                                     disabled={updating}
                                 >
-                                    {updating
-                                        ? "Please wait..."
-                                        : "Delete Report"}
+                                    {updating ? "Please wait..." : "Delete Report"}
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+        </main>
     );
 }
 
