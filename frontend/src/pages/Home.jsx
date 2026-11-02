@@ -3,186 +3,218 @@ import { Link } from "react-router-dom";
 
 function Home() {
     return (
-        <main className="home-page">
-            <section className="hero">
-                <div className="hero-content">
-                    <span className="tagline">
-                        ✦ YOUR CAMPUS, CONNECTED
+        <main className="home-page scrapbook-home">
+
+            {/* HERO SECTION */}
+            <section className="campus-hero">
+                <div className="hero-paper">
+                    <div className="paper-tape"></div>
+
+                    <span className="campus-kicker">
+                        ✿ A LITTLE CAMPUS COMMUNITY PROJECT
                     </span>
 
                     <h1>
-                        Lost something?
+                        Lost something
                         <br />
-                        <span>Let's find it together.</span>
+                        around <span>campus?</span>
                     </h1>
 
-                    <p className="description">
-                        Your campus community is here to help.
-                        Report lost belongings, discover found items
-                        and reconnect with what matters.
+                    <p className="campus-intro">
+                        Don't worry. Somewhere on campus, someone
+                        might have found it. Let's help your belongings
+                        find their way back home.
                     </p>
 
                     <div className="hero-buttons">
                         <Link to="/report" className="btn btn-primary">
-                            + Report an Item
+                            + Pin a Report
                         </Link>
 
                         <Link to="/reports" className="btn btn-secondary">
-                            Explore Marketplace ↗
+                            Explore the Board ↗
                         </Link>
                     </div>
 
-                    <div className="hero-note">
-                        <span>✦</span>
-                        A little help from your campus community goes a long way.
+                    <div className="hero-handwritten">
+                        "One small post can make someone's day."
                     </div>
+
+                    <span className="paper-flower flower-one">✿</span>
+                    <span className="paper-flower flower-two">✳</span>
                 </div>
 
-                <div className="hero-visual">
-                    <div className="hero-decoration decoration-one"></div>
-                    <div className="hero-decoration decoration-two"></div>
+                <div className="noticeboard-scene">
+                    <div className="board-heading">
+                        <span>THE CAMPUS NOTICEBOARD</span>
+                        <span className="board-live">● COMMUNITY BOARD</span>
+                    </div>
 
-                    <div className="hero-main-card">
-                        <div className="hero-card-top">
-                            <span className="hero-card-label">
-                                CAMPUS MARKETPLACE
-                            </span>
-                            <span className="hero-card-dot">●</span>
+                    <div className="board-main">
+                        <div className="board-note note-lavender">
+                            <span className="note-pin pin-purple"></span>
+                            <span className="note-small">LOST & FOUND</span>
+                            <span className="note-emoji">🎒</span>
+                            <h3>Every item deserves a way home.</h3>
+                            <p>Let's make it happen together.</p>
                         </div>
 
-                        <div className="hero-illustration">
-                            <div className="illustration-circle">
-                                <span>🎒</span>
-                            </div>
-                            <div className="illustration-star star-one">✦</div>
-                            <div className="illustration-star star-two">✧</div>
+                        <div className="board-note note-peach">
+                            <span className="note-pin pin-orange"></span>
+                            <span className="note-emoji">🔎</span>
+                            <h3>Looking for something?</h3>
+                            <p>Check the community reports.</p>
                         </div>
 
-                        <div className="hero-card-bottom">
-                            <div>
-                                <h3>Every item has a way home.</h3>
-                                <p>Connect. Discover. Reunite.</p>
-                            </div>
-                            <span className="hero-arrow">↗</span>
+                        <div className="board-note note-mint">
+                            <span className="note-pin pin-green"></span>
+                            <span className="note-emoji">🤝</span>
+                            <h3>Found something?</h3>
+                            <p>Be someone's good news today.</p>
+                        </div>
+
+                        <div className="board-doodle doodle-one">✳</div>
+                        <div className="board-doodle doodle-two">♡</div>
+                        <div className="board-caption">
+                            A CAMPUS THAT CARES
                         </div>
                     </div>
 
-                    <div className="floating-note note-top">
-                        <span className="floating-icon">🔎</span>
-                        <div>
-                            <strong>Looking for something?</strong>
-                            <small>Browse campus reports</small>
-                        </div>
-                    </div>
-
-                    <div className="floating-note note-bottom">
-                        <span className="floating-icon">🤝</span>
-                        <div>
-                            <strong>Community first</strong>
-                            <small>Helping items find owners</small>
-                        </div>
+                    <div className="board-footer">
+                        <span>NOTICE BOARD NO. 01</span>
+                        <span>MADE FOR OUR CAMPUS ✿</span>
                     </div>
                 </div>
             </section>
 
-            <section className="home-stats">
-                <div>
-                    <span className="home-stat-icon">⌕</span>
+            {/* CAMPUS ACTIVITY STRIP */}
+            <section className="campus-activity">
+                <div className="activity-heading">
+                    <span className="activity-sparkle">✳</span>
                     <div>
-                        <h3>Lost</h3>
-                        <p>Report missing belongings</p>
+                        <span className="activity-eyebrow">
+                            THE LITTLE THINGS THAT MATTER
+                        </span>
+                        <h2>Three ways to make a difference.</h2>
                     </div>
                 </div>
 
-                <div>
-                    <span className="home-stat-icon">✦</span>
-                    <div>
-                        <h3>Found</h3>
-                        <p>Share items you discover</p>
+                <div className="activity-items">
+                    <div className="activity-item activity-lost">
+                        <span className="activity-icon">🧳</span>
+                        <div>
+                            <h3>Lost</h3>
+                            <p>Tell the campus what is missing.</p>
+                        </div>
+                        <span className="activity-arrow">↗</span>
                     </div>
-                </div>
 
-                <div>
-                    <span className="home-stat-icon">✓</span>
-                    <div>
-                        <h3>Reunited</h3>
-                        <p>Help belongings find their way home</p>
+                    <div className="activity-item activity-found">
+                        <span className="activity-icon">🪴</span>
+                        <div>
+                            <h3>Found</h3>
+                            <p>Share something you discovered.</p>
+                        </div>
+                        <span className="activity-arrow">↗</span>
+                    </div>
+
+                    <div className="activity-item activity-returned">
+                        <span className="activity-icon">💌</span>
+                        <div>
+                            <h3>Reunited</h3>
+                            <p>Help an item reach its owner.</p>
+                        </div>
+                        <span className="activity-arrow">↗</span>
                     </div>
                 </div>
             </section>
 
-            <section className="features">
-                <div className="features-heading">
-                    <span className="section-eyebrow">
-                        SIMPLE. USEFUL. COMMUNITY-POWERED.
+            {/* HOW IT WORKS */}
+            <section className="campus-how">
+                <div className="how-heading">
+                    <span className="activity-eyebrow">
+                        YOUR CAMPUS, YOUR COMMUNITY
                     </span>
-
                     <h2>
-                        How CampusLoop <span>works</span>
+                        It's as easy as <span>one, two, three.</span>
                     </h2>
-
                     <p>
-                        Three simple ways to make your campus a more connected place.
+                        A simple little space to connect lost belongings
+                        with the people looking for them.
                     </p>
                 </div>
 
-                <div className="feature-grid">
-                    <article className="feature-card">
-                        <div className="feature-icon">📢</div>
-                        <span className="feature-number">01</span>
-                        <h3>Report an Item</h3>
+                <div className="scrapbook-features">
+                    <article className="scrapbook-card scrapbook-card-one">
+                        <span className="feature-sticker">01</span>
+                        <div className="scrapbook-icon icon-peach">📌</div>
+                        <span className="card-category">FIRST THINGS FIRST</span>
+                        <h3>Pin a report</h3>
                         <p>
-                            Lost something? Share its details and help
-                            other students identify it.
+                            Lost something or found an item?
+                            Add its details so other students can see it.
                         </p>
                         <Link to="/report">Create a report ↗</Link>
                     </article>
 
-                    <article className="feature-card">
-                        <div className="feature-icon">🔎</div>
-                        <span className="feature-number">02</span>
-                        <h3>Explore Reports</h3>
+                    <article className="scrapbook-card scrapbook-card-two">
+                        <span className="feature-sticker">02</span>
+                        <div className="scrapbook-icon icon-lavender">🔍</div>
+                        <span className="card-category">TAKE A LOOK</span>
+                        <h3>Explore the board</h3>
                         <p>
-                            Browse lost and found belongings shared
-                            by your campus community.
+                            Browse reports, search for belongings
+                            and discover what other students have found.
                         </p>
-                        <Link to="/reports">Browse items ↗</Link>
+                        <Link to="/reports">Explore reports ↗</Link>
                     </article>
 
-                    <article className="feature-card">
-                        <div className="feature-icon">🤝</div>
-                        <span className="feature-number">03</span>
-                        <h3>Reconnect</h3>
+                    <article className="scrapbook-card scrapbook-card-three">
+                        <span className="feature-sticker">03</span>
+                        <div className="scrapbook-icon icon-mint">💚</div>
+                        <span className="card-category">THE HAPPY PART</span>
+                        <h3>Make a connection</h3>
                         <p>
-                            Help belongings return to their rightful
-                            owners through community support.
+                            Help someone reconnect with a missing
+                            belonging through the campus community.
                         </p>
                         <Link to="/reports">Find an item ↗</Link>
                     </article>
                 </div>
             </section>
 
-            <section className="home-cta">
-                <div>
-                    <span className="section-eyebrow">
-                        BE PART OF THE COMMUNITY
+            {/* CLOSING NOTICE */}
+            <section className="campus-final-note">
+                <div className="final-note-decoration">✿</div>
+
+                <div className="final-note-content">
+                    <span className="activity-eyebrow">
+                        A SMALL ACT OF KINDNESS
                     </span>
 
                     <h2>
-                        Someone might be looking for
+                        Found something?
                         <br />
-                        what you've found.
+                        You could be someone's <span>happy ending.</span>
                     </h2>
 
                     <p>
-                        Take a moment to report it. It could make someone's day.
+                        Put it on the board. Your little effort
+                        might mean a lot to another student.
                     </p>
+
+                    <Link to="/report" className="btn btn-primary">
+                        Share what you found ↗
+                    </Link>
                 </div>
 
-                <Link to="/report" className="btn btn-primary">
-                    Report an Item ↗
-                </Link>
+                <div className="final-note-art">
+                    <span className="final-heart">♡</span>
+                    <span className="final-flower">🌼</span>
+                    <span className="final-star">✳</span>
+                </div>
             </section>
+
         </main>
     );
 }

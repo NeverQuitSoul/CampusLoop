@@ -75,6 +75,39 @@ db.getConnection((err, connection) => {
     }
 });
 
+function expireOldReports(callback) {
+    const sql = `
+        UPDATE items
+        SET status = 'Expired'
+        WHERE status = 'Active'
+        AND expires_at IS NOT NULL
+        AND expires_at <= CURRENT_TIMESTAMP
+    `;
+
+    db.query(sql, (error, result) => {
+        if (error) {
+            console.error("Automatic expiry error:", error);
+
+            if (callback) callback(error);
+            return;
+        }
+
+        if (result.affectedRows > 0) {
+            console.log(
+                `${result.affectedRows} report(s) automatically expired.`
+            );
+        }
+
+        if (callback) callback(null, result);
+    });
+}
+
+expireOldReports();
+
+setInterval(() => {
+    expireOldReports();
+}, 60 * 1000);
+
 const storage = new CloudinaryStorage({
     cloudinary,
     params: {
@@ -138,7 +171,6 @@ async function removeStoredImage(imagePath) {
             let publicId = pathname.substring(uploadIndex + 8);
 
             publicId = publicId.replace(/^v\d+\//, "");
-
             publicId = publicId.replace(/\.[^/.]+$/, "");
 
             await deleteCloudinaryImage(publicId);
@@ -197,6 +229,19 @@ function checkAdmin(req, res, next) {
 
     next();
 }
+
+const publicItemFields = `
+    id,
+    report_type,
+    item_name,
+    description,
+    location,
+    item_date,
+    created_at,
+    expires_at,
+    status,
+    image_path
+`;
 
 app.post("/api/auth/register", async (req, res) => {
     try {
@@ -415,18 +460,6 @@ app.get("/api/auth/me", authenticateToken, (req, res) => {
     });
 });
 
-const publicItemFields = `
-    id,
-    report_type,
-    item_name,
-    description,
-    location,
-    item_date,
-    created_at,
-    status,
-    image_path
-`;
-
 app.get("/", (req, res) => {
     res.send("CampusLoop Backend is running!");
 });
@@ -435,6 +468,7 @@ app.get("/api/items", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
         FROM items
+        WHERE status = 'Active'
         ORDER BY created_at DESC
     `;
 
@@ -464,7 +498,7 @@ app.get("/api/items/category/:type", (req, res) => {
         SELECT ${publicItemFields}
         FROM items
         WHERE report_type = ?
-        AND status != 'Resolved'
+        AND status = 'Active'
         ORDER BY created_at DESC
     `;
 
@@ -501,6 +535,76 @@ app.get("/api/items/completed", (req, res) => {
         res.json(results);
     });
 });
+
+app.get("/api/items/mine", authenticateToken, (req, res) => {
+    const sql = `
+        SELECT ${publicItemFields}
+        FROM items
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+    `;
+
+    db.query(sql, [req.user.id], (error, results) => {
+        if (error) {
+            console.error("My reports database error:", error);
+
+            return res.status(500).json({
+                message: "Could not fetch your reports."
+            });
+        }
+
+        res.json(results);
+    });
+});
+
+app.put(
+    "/api/items/:id/renew",
+    authenticateToken,
+    (req, res) => {
+        if (req.user.role !== "student") {
+            return res.status(403).json({
+                message: "Only students can renew reports."
+            });
+        }
+
+        const sql = `
+            UPDATE items
+            SET
+                status = 'Active',
+                expires_at = DATE_ADD(
+                    CURRENT_TIMESTAMP,
+                    INTERVAL 90 DAY
+                )
+            WHERE id = ?
+            AND user_id = ?
+            AND status = 'Expired'
+        `;
+
+        db.query(
+            sql,
+            [req.params.id, req.user.id],
+            (error, result) => {
+                if (error) {
+                    console.error("Report renewal error:", error);
+
+                    return res.status(500).json({
+                        message: "Could not renew your report."
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.status(400).json({
+                        message: "Report cannot be renewed. It may not exist, may not belong to you, or may not be expired."
+                    });
+                }
+
+                res.json({
+                    message: "Report renewed successfully for another 90 days."
+                });
+            }
+        );
+    }
+);
 
 app.get("/api/items/:id", (req, res) => {
     const sql = `
@@ -589,9 +693,13 @@ app.post(
                 item_date,
                 contact,
                 status,
-                image_path
+                image_path,
+                expires_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', ?)
+            VALUES (
+                ?, ?, ?, ?, ?, ?, ?, 'Active', ?,
+                DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 90 DAY)
+            )
         `;
 
         db.query(
