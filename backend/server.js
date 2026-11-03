@@ -517,7 +517,8 @@ app.get("/api/admin/overview", authenticateToken, checkAdmin, async (req, res) =
                 SUM(status = 'Expired') AS expiredReports,
                 SUM(status = 'Resolved') AS returnedReports,
                 SUM(report_type = 'lost') AS lostReports,
-                SUM(report_type = 'found') AS foundReports
+                SUM(report_type = 'found') AS foundReports,
+                (SELECT COUNT(*) FROM users) AS totalUsers
             FROM items
         `);
         const [userRows] = await db.promise().query(`
