@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../api";
 
@@ -472,16 +473,21 @@ function BrowseReports() {
                                         {item.description || "No description provided."}
                                     </p>
 
-                                    <button
-                                        type="button"
-                                        className="market-view-button"
-                                        onClick={() => {
-                                            setSelectedItem(item);
-                                            setActionMessage("");
-                                        }}
-                                    >
-                                        View details <span>↗</span>
-                                    </button>
+                                    <div className="marketplace-card-actions">
+                                        <Link to={`/reports/${item.id}`} className="market-view-button market-view-link">
+                                            View Details <span>↗</span>
+                                        </Link>
+                                        <button
+                                            type="button"
+                                            className="market-view-button market-view-secondary"
+                                            onClick={() => {
+                                                setSelectedItem(item);
+                                                setActionMessage("");
+                                            }}
+                                        >
+                                            Quick View
+                                        </button>
+                                    </div>
                                 </div>
                             </article>
                         ))}
