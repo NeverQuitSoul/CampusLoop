@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import AdminLogin from "./pages/AdminLogin";
 import MyReports from "./pages/MyReports";
+import AdminDashboard from "./pages/AdminDashboard";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -24,6 +25,8 @@ function AppContent() {
                 <div className="nav-links">
                     <Link to="/">Home</Link>
                     <Link to="/reports">Browse Reports</Link>
+
+                    {user?.role === "admin" && <Link to="/admin/dashboard">Admin Dashboard</Link>}
 
                     {user?.role === "student" && (
                         <>
@@ -78,6 +81,7 @@ function AppContent() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             </Routes>
 
             <footer>CampusLoop © 2026 | Helping our campus reconnect</footer>
