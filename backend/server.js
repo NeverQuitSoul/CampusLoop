@@ -558,6 +558,68 @@ app.get("/api/items/mine", authenticateToken, (req, res) => {
 });
 
 app.put(
+    "/api/items/:id",
+    authenticateToken,
+    (req, res, next) => {
+        upload.single("image")(req, res, (error) => {
+            if (error) return res.status(400).json({ message: error.message });
+            next();
+        });
+    },
+    (req, res) => {
+        if (req.user.role !== "student") {
+            removeUploadedFile(req.file);
+            return res.status(403).json({ message: "Only students can edit reports." });
+        }
+
+        const { reportType, itemName, description, location, date, contact } = req.body;
+        if (!["lost", "found"].includes(String(reportType).toLowerCase()) ||
+            !itemName?.trim() || !description?.trim() || !location?.trim() || !date || !contact?.trim()) {
+            removeUploadedFile(req.file);
+            return res.status(400).json({ message: "Please provide all required details." });
+        }
+
+        db.query(
+            "SELECT image_path FROM items WHERE id = ? AND user_id = ? AND status IN ('Active', 'Expired')",
+            [req.params.id, req.user.id],
+            (findError, rows) => {
+                if (findError) {
+                    removeUploadedFile(req.file);
+                    return res.status(500).json({ message: "Could not find your report." });
+                }
+                if (!rows.length) {
+                    removeUploadedFile(req.file);
+                    return res.status(404).json({ message: "Report not found or cannot be edited." });
+                }
+
+                const oldImage = rows[0].image_path;
+                const imagePath = req.file ? req.file.path : oldImage;
+                const sql = `UPDATE items SET report_type=?, item_name=?, description=?,
+                    location=?, item_date=?, contact=?, image_path=?
+                    WHERE id=? AND user_id=? AND status IN ('Active','Expired')`;
+
+                db.query(sql, [
+                    reportType.toLowerCase(), itemName.trim(), description.trim(),
+                    location.trim(), date, contact.trim(), imagePath,
+                    req.params.id, req.user.id
+                ], (updateError, result) => {
+                    if (updateError) {
+                        removeUploadedFile(req.file);
+                        return res.status(500).json({ message: "Could not save your changes." });
+                    }
+                    if (!result.affectedRows) {
+                        removeUploadedFile(req.file);
+                        return res.status(404).json({ message: "Report could not be updated." });
+                    }
+                    if (req.file && oldImage) removeStoredImage(oldImage);
+                    res.json({ message: "Your report details have been updated successfully." });
+                });
+            }
+        );
+    }
+);
+
+app.put(
     "/api/items/:id/renew",
     authenticateToken,
     (req, res) => {
