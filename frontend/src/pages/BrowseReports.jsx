@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../api";
+import ImagePreview from "../components/ImagePreview";
 
 function getImageUrl(imagePath) {
     if (!imagePath) return "";
@@ -26,6 +27,8 @@ function BrowseReports() {
     const [searchTerm, setSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState("lost");
     const [sortOrder, setSortOrder] = useState("newest");
+    const [locationFilter, setLocationFilter] = useState("all");
+    const [dateFilter, setDateFilter] = useState("all");
     const [updating, setUpdating] = useState(false);
     const [actionMessage, setActionMessage] = useState("");
 
@@ -196,13 +199,22 @@ function BrowseReports() {
 
     const filteredItems = currentItems.filter(item => {
         const search = searchTerm.trim().toLowerCase();
-
-        return (
-            (item.item_name || "").toLowerCase().includes(search) ||
-            (item.description || "").toLowerCase().includes(search) ||
-            (item.location || "").toLowerCase().includes(search)
+        const matchesSearch = !search || (
+            String(item.item_name || "").toLowerCase().includes(search) ||
+            String(item.description || "").toLowerCase().includes(search) ||
+            String(item.location || "").toLowerCase().includes(search)
         );
+        const matchesLocation = locationFilter === "all" || String(item.location || "").toLowerCase() === locationFilter;
+        const reportDate = new Date(item.item_date || item.created_at || item.date);
+        const daysOld = Number.isNaN(reportDate.getTime()) ? Infinity : (Date.now() - reportDate.getTime()) / 86400000;
+        const matchesDate = dateFilter === "all" ||
+            (dateFilter === "today" && daysOld < 1) ||
+            (dateFilter === "week" && daysOld <= 7) ||
+            (dateFilter === "month" && daysOld <= 30);
+        return matchesSearch && matchesLocation && matchesDate;
     });
+
+    const availableLocations = [...new Set(currentItems.map(item => String(item.location || "").trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b));
 
     const sortedItems = [...filteredItems].sort((a, b) => {
         const dateA = new Date(
@@ -393,6 +405,13 @@ function BrowseReports() {
                             <option value="newest">Newest first</option>
                             <option value="oldest">Oldest first</option>
                         </select>
+                        <select className="reports-filter" value={locationFilter} onChange={event => setLocationFilter(event.target.value)} aria-label="Filter by location">
+                            <option value="all">All locations</option>
+                            {availableLocations.map(location => <option key={location} value={location.toLowerCase()}>{location}</option>)}
+                        </select>
+                        <select className="reports-filter" value={dateFilter} onChange={event => setDateFilter(event.target.value)} aria-label="Filter by report date">
+                            <option value="all">Any date</option><option value="today">Today</option><option value="week">Last 7 days</option><option value="month">Last 30 days</option>
+                        </select>
                     </div>
                 </div>
 
@@ -435,14 +454,7 @@ function BrowseReports() {
                             <article className="report-card marketplace-card" key={item.id}>
                                 <div className="marketplace-image-wrap">
                                     {item.image_path ? (
-                                        <img
-                                            src={getImageUrl(item.image_path)}
-                                            alt={item.item_name}
-                                            className="report-card-image"
-                                            onError={event => {
-                                                event.currentTarget.style.display = "none";
-                                            }}
-                                        />
+                                        <ImagePreview src={getImageUrl(item.image_path)} alt={item.item_name} className="report-card-image" />
                                     ) : (
                                         <div className="report-image-placeholder">
                                             <span>▧</span>
