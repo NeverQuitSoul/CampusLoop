@@ -22,6 +22,9 @@ function ReportDetails() {
     const isAdmin = user?.role === "admin";
     const [actionMessage, setActionMessage] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
+    const [contactOpen, setContactOpen] = useState(false);
+    const [contactMessage, setContactMessage] = useState("");
+    const [sendingMessage, setSendingMessage] = useState(false);
 
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -79,6 +82,29 @@ function ReportDetails() {
             setActionMessage(err.message);
         } finally {
             setActionLoading(false);
+        }
+    }
+
+    async function sendReporterMessage(event) {
+        event.preventDefault();
+        if (!token || !item || sendingMessage) return;
+        setSendingMessage(true);
+        setActionMessage("");
+        try {
+            const response = await fetch(API_URL + "/api/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+                body: JSON.stringify({ itemId: item.id, message: contactMessage })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "Could not send your message.");
+            setContactMessage("");
+            setContactOpen(false);
+            setActionMessage("Message sent. You can follow replies from the Messages page.");
+        } catch (err) {
+            setActionMessage(err.message);
+        } finally {
+            setSendingMessage(false);
         }
     }
 
@@ -149,9 +175,31 @@ function ReportDetails() {
 
                     <p>
                         <strong>Status:</strong>{" "}
-                        {item.status === "Resolved" ? "Returned" : "Active"}
+                        {item.status === "Resolved" ? "Returned" : item.status === "Expired" ? "Expired" : "Active"}
                     </p>
 
+                    <section className="report-tracking">
+                        <h2>Report progress</h2>
+                        <div className="tracking-step complete"><span>✓</span><div><strong>Report submitted</strong><small>{displayDate(item.created_at)}</small></div></div>
+                        <div className={"tracking-step " + (item.status === "Active" ? "current" : "complete")}><span>{item.status === "Active" ? "●" : "✓"}</span><div><strong>Visible to campus</strong><small>{item.status === "Active" ? "Students can contact the reporter." : "This report is no longer active."}</small></div></div>
+                        <div className={"tracking-step " + (item.status === "Resolved" || item.status === "Expired" ? "complete" : "pending")}><span>{item.status === "Resolved" ? "✓" : item.status === "Expired" ? "⌛" : "○"}</span><div><strong>{item.status === "Resolved" ? "Marked as returned" : item.status === "Expired" ? "Report expired" : "Awaiting an update"}</strong><small>{item.status === "Expired" ? "The report has reached its expiry date." : item.status === "Resolved" ? "The item has been marked as returned." : "The report remains open."}</small></div></div>
+                    </section>
+
+                    {user?.role === "student" && item.status !== "Expired" && (
+                        <div className="report-contact-actions">
+                            <button type="button" className="market-primary-button" onClick={() => setContactOpen(value => !value)}>✉ Contact Reporter</button>
+                            <Link to="/messages" className="report-messages-link">Open Messages</Link>
+                        </div>
+                    )}
+                    {!user && item.status !== "Expired" && <p className="report-login-contact"><Link to="/login">Log in</Link> as a student to contact the reporter.</p>}
+                    {contactOpen && (
+                        <form className="contact-reporter-form" onSubmit={sendReporterMessage}>
+                            <label htmlFor="reporter-message">Your message to the reporter</label>
+                            <textarea id="reporter-message" rows="4" minLength="2" maxLength="1500" value={contactMessage} onChange={event => setContactMessage(event.target.value)} placeholder="Introduce yourself and explain why you're contacting them..." required />
+                            <small>Your message is sent privately. Your email address is not displayed publicly.</small>
+                            <div><button type="button" onClick={() => setContactOpen(false)}>Cancel</button><button type="submit" disabled={sendingMessage}>{sendingMessage ? "Sending..." : "Send Message"}</button></div>
+                        </form>
+                    )}
                     {actionMessage && <p className="form-message" role="status">{actionMessage}</p>}
 
                     {isAdmin && (
