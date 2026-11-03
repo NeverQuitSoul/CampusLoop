@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { API_URL } from "../api";
+import ImagePreview from "../components/ImagePreview";
 
 function getImageUrl(imagePath) {
     if (!imagePath) return "";
@@ -76,14 +77,7 @@ function ReportDetails() {
 
             <div className="report-details-card">
                 {item.image_path && (
-                    <img
-                        className="report-details-image"
-                        src={getImageUrl(item.image_path)}
-                        alt={item.item_name}
-                        onError={event => {
-                            event.currentTarget.style.display = "none";
-                        }}
-                    />
+                    <ImagePreview className="report-details-image" src={getImageUrl(item.image_path)} alt={item.item_name} />
                 )}
 
                 <div className="report-details-content">
