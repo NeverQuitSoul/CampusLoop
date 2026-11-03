@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../api";
 import ImagePreview from "../components/ImagePreview";
 
@@ -16,6 +17,11 @@ function getImageUrl(imagePath) {
 
 function ReportDetails() {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { token, user } = useAuth();
+    const isAdmin = user?.role === "admin";
+    const [actionMessage, setActionMessage] = useState("");
+    const [actionLoading, setActionLoading] = useState(false);
 
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -43,6 +49,38 @@ function ReportDetails() {
 
         loadDetails();
     }, [id]);
+
+    async function handleAdminAction(action) {
+        if (!item || !isAdmin || actionLoading) return;
+        const label = action === "return" ? "mark this item as returned" : "permanently delete this report";
+        if (!window.confirm("Are you sure you want to " + label + "?")) return;
+
+        setActionLoading(true);
+        setActionMessage("");
+        try {
+            const response = await fetch(
+                action === "return"
+                    ? API_URL + "/api/items/" + id + "/resolve"
+                    : API_URL + "/api/items/" + id,
+                {
+                    method: action === "return" ? "PUT" : "DELETE",
+                    headers: { Authorization: "Bearer " + token }
+                }
+            );
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "Could not update this report.");
+            if (action === "delete") {
+                navigate("/reports", { replace: true });
+                return;
+            }
+            setItem(current => ({ ...current, status: "Resolved" }));
+            setActionMessage(result.message || "Item marked as returned.");
+        } catch (err) {
+            setActionMessage(err.message);
+        } finally {
+            setActionLoading(false);
+        }
+    }
 
     function displayDate(dateValue) {
         if (!dateValue) return "Not provided";
@@ -113,6 +151,21 @@ function ReportDetails() {
                         <strong>Status:</strong>{" "}
                         {item.status === "Resolved" ? "Returned" : "Active"}
                     </p>
+
+                    {actionMessage && <p className="form-message" role="status">{actionMessage}</p>}
+
+                    {isAdmin && (
+                        <div className="report-details-admin-actions">
+                            {item.status !== "Resolved" && (
+                                <button type="button" className="market-primary-button" disabled={actionLoading} onClick={() => handleAdminAction("return")}>
+                                    {actionLoading ? "Please wait..." : "✓ Mark as Returned"}
+                                </button>
+                            )}
+                            <button type="button" className="admin-detail-delete" disabled={actionLoading} onClick={() => handleAdminAction("delete")}>
+                                Delete Report
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
