@@ -59,7 +59,7 @@ function Profile() {
         <main className="profile-page">
             <header className="profile-heading">
                 <span className="section-eyebrow">YOUR ACCOUNT</span>
-                <h1>Student <span>Profile</span></h1>
+                <h1>My <span>Profile</span></h1>
                 <p>Manage your CampusLoop account details and view your activity.</p>
             </header>
             {error && <p className="profile-alert error">{error}</p>}
