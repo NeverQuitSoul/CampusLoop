@@ -41,10 +41,7 @@ function MyReports() {
     const [editForm, setEditForm] = useState({});
     const [savingEdit, setSavingEdit] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
-    const [editingItem, setEditingItem] = useState(null);
-    const [editForm, setEditForm] = useState({});
-    const [savingEdit, setSavingEdit] = useState(false);
-    const [deletingId, setDeletingId] = useState(null);
+
 
     const loadReports = useCallback(async () => {
         if (!token) {
@@ -174,75 +171,6 @@ function MyReports() {
             const file = event.currentTarget.elements.image?.files?.[0];
             if (file) formData.append("image", file);
 
-            const response = await fetch(`${API_URL}/api/items/${editingItem.id}`, {
-                method: "PUT",
-                headers: { Authorization: `Bearer ${token}` },
-                body: formData
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "Could not update your report.");
-            setEditingItem(null);
-            await loadReports();
-            setMessage(data.message || "Report updated successfully.");
-        } catch (err) {
-            setError(err.message || "Could not update your report.");
-        } finally {
-            setSavingEdit(false);
-        }
-    }
-
-    async function deleteReport(item) {
-        if (deletingId !== null) return;
-        if (!window.confirm(`Delete "${item.item_name}"? This action cannot be undone.`)) return;
-        setDeletingId(item.id);
-        setMessage("");
-        setError("");
-        try {
-            const response = await fetch(`${API_URL}/api/items/${item.id}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "Could not delete this report.");
-            await loadReports();
-            setMessage(data.message || "Report deleted successfully.");
-        } catch (err) {
-            setError(err.message || "Could not delete this report.");
-        } finally {
-            setDeletingId(null);
-        }
-    }
-
-    function startEditing(item) {
-        setEditingItem(item);
-        setEditForm({
-            reportType: item.report_type || "lost",
-            itemName: item.item_name || "",
-            description: item.description || "",
-            location: item.location || "",
-            date: String(item.item_date || "").slice(0, 10),
-            contact: item.contact || ""
-        });
-        setMessage("");
-        setError("");
-    }
-
-    function updateEditField(event) {
-        const { name, value } = event.target;
-        setEditForm(previous => ({ ...previous, [name]: value }));
-    }
-
-    async function saveEdit(event) {
-        event.preventDefault();
-        if (!editingItem || savingEdit) return;
-        setSavingEdit(true);
-        setMessage("");
-        setError("");
-        try {
-            const formData = new FormData();
-            Object.entries(editForm).forEach(([key, value]) => formData.append(key, value));
-            const file = event.currentTarget.elements.image?.files?.[0];
-            if (file) formData.append("image", file);
             const response = await fetch(`${API_URL}/api/items/${editingItem.id}`, {
                 method: "PUT",
                 headers: { Authorization: `Bearer ${token}` },
@@ -428,6 +356,7 @@ function MyReports() {
                                             <span>{formatDate(item.item_date || item.created_at)}</span>
                                         </div>
                                         <h3>{item.item_name}</h3>
+                                        <Link to={`/reports/${item.id}`} className="my-report-view-link">View Details</Link>
                                         <p className="my-report-description">
                                             {item.description || "No description provided."}
                                         </p>
