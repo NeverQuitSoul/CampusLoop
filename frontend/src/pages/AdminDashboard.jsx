@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { API_URL } from "../api";
 import { useAuth } from "../context/AuthContext";
+import BrowseReports from "./BrowseReports";
 
 function AdminDashboard() {
     const { token } = useAuth();
@@ -73,6 +74,14 @@ function AdminDashboard() {
                 <article className="admin-stat-card"><span>Active reports</span><strong>{Number(data.stats.activeReports || 0)}</strong></article>
                 <article className="admin-stat-card"><span>Returned items</span><strong>{Number(data.stats.returnedReports || 0)}</strong></article>
                 <article className="admin-stat-card"><span>Registered users</span><strong>{Number(data.stats.totalUsers || data.users.length)}</strong></article>
+            </section>
+
+            <section className="admin-panel admin-browse-panel">
+                <div className="admin-panel-heading">
+                    <div><span className="section-eyebrow">ORIGINAL REPORT BROWSER</span><h2>Browse Lost & Found Reports</h2></div>
+                    <span>Quick View · Full Details</span>
+                </div>
+                <BrowseReports />
             </section>
 
             <section className="admin-panel">
