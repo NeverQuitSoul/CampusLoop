@@ -389,19 +389,6 @@ function MyReports() {
                                             </div>
                                         )}
 
-                                        {(item.status === "Active" || item.status === "Expired") && (
-                                            <div className="my-report-actions">
-                                                <button type="button" onClick={() => startEditing(item)}>Edit Details</button>
-                                                <button
-                                                    type="button"
-                                                    className="my-report-delete-button"
-                                                    onClick={() => deleteReport(item)}
-                                                    disabled={deletingId !== null}
-                                                >
-                                                    {deletingId === item.id ? "Deleting..." : "Delete"}
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 </article>
                             );
