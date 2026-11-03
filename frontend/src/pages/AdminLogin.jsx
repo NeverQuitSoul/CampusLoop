@@ -38,7 +38,7 @@ function AdminLogin() {
             }
 
             login(data.token, data.user);
-            navigate("/reports");
+            navigate("/admin/dashboard");
         } catch (error) {
             setMessage(error.message);
         } finally {
