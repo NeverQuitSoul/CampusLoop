@@ -575,10 +575,48 @@ app.post("/api/messages", authenticateToken, (req, res) => {
             [req.user.id, rows[0].user_id, itemId, message],
             (insertError, result) => {
                 if (insertError) return res.status(500).json({ message: "Could not send your message." });
+                db.query(
+                    "INSERT INTO notifications (user_id, item_id, title, message) VALUES (?, ?, ?, ?)",
+                    [rows[0].user_id, itemId, "New message about a report", "A student sent you a private message about " + rows[0].item_name + "."],
+                    noticeError => { if (noticeError) console.error("Message notification error:", noticeError); }
+                );
                 res.status(201).json({ message: "Message sent to the reporter.", id: result.insertId });
             }
         );
     });
+});
+
+app.post("/api/messages/:id/reply", authenticateToken, (req, res) => {
+    if (req.user.role !== "student") return res.status(403).json({ message: "Only students can reply to messages." });
+    const message = String(req.body.message || "").trim();
+    if (message.length < 2 || message.length > 1500) {
+        return res.status(400).json({ message: "Enter a message between 2 and 1500 characters." });
+    }
+    db.query(
+        "SELECT sender_id, recipient_id, item_id FROM messages WHERE id = ? AND (sender_id = ? OR recipient_id = ?) LIMIT 1",
+        [req.params.id, req.user.id, req.user.id],
+        (findError, rows) => {
+            if (findError) return res.status(500).json({ message: "Could not find this conversation." });
+            if (!rows.length) return res.status(404).json({ message: "Message not found." });
+            const original = rows[0];
+            const recipientId = Number(original.sender_id) === Number(req.user.id)
+                ? original.recipient_id
+                : original.sender_id;
+            db.query(
+                "INSERT INTO messages (sender_id, recipient_id, item_id, message) VALUES (?, ?, ?, ?)",
+                [req.user.id, recipientId, original.item_id, message],
+                (insertError, result) => {
+                    if (insertError) return res.status(500).json({ message: "Could not send your reply." });
+                    db.query(
+                        "INSERT INTO notifications (user_id, item_id, title, message) VALUES (?, ?, ?, ?)",
+                        [recipientId, original.item_id, "New message reply", "You received a reply about a CampusLoop report."],
+                        noticeError => { if (noticeError) console.error("Reply notification error:", noticeError); }
+                    );
+                    res.status(201).json({ message: "Reply sent.", id: result.insertId });
+                }
+            );
+        }
+    );
 });
 
 app.get("/api/messages/inbox", authenticateToken, (req, res) => {
