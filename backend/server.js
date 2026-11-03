@@ -66,6 +66,19 @@ const db = mysql.createPool({
         : {})
 });
 
+db.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        item_id INT NULL,
+        title VARCHAR(180) NOT NULL,
+        message VARCHAR(500) NOT NULL,
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_notifications_user (user_id, created_at)
+    )
+`, (error) => { if (error) console.error("Notifications table setup failed:", error); });
+
 db.getConnection((err, connection) => {
     if (err) {
         console.error("Database connection failed:", err);
@@ -465,6 +478,36 @@ app.get("/", (req, res) => {
 });
 
 
+
+app.get("/api/notifications", authenticateToken, (req, res) => {
+    db.query(
+        "SELECT id, item_id, title, message, is_read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+        [req.user.id],
+        (error, rows) => {
+            if (error) {
+                console.error("Notifications fetch error:", error);
+                return res.status(500).json({ message: "Could not load notifications." });
+            }
+            res.json(rows);
+        }
+    );
+});
+
+app.put("/api/notifications/:id/read", authenticateToken, (req, res) => {
+    db.query(
+        "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+        [req.params.id, req.user.id],
+        (error, result) => {
+            if (error) {
+                console.error("Notification update error:", error);
+                return res.status(500).json({ message: "Could not update notification." });
+            }
+            if (!result.affectedRows) return res.status(404).json({ message: "Notification not found." });
+            res.json({ message: "Notification marked as read." });
+        }
+    );
+});
+
 app.get("/api/admin/overview", authenticateToken, checkAdmin, async (req, res) => {
     try {
         const [statsRows] = await db.promise().query(`
@@ -826,6 +869,30 @@ app.post(
                     });
                 }
 
+                db.query(
+                    "SELECT id, user_id FROM items WHERE id <> ? AND status = 'Active' AND LOWER(item_name) = LOWER(?) AND report_type <> ?",
+                    [result.insertId, itemName.trim(), reportType.toLowerCase()],
+                    (matchError, matches) => {
+                        if (matchError) {
+                            console.error("Matching report lookup error:", matchError);
+                            return;
+                        }
+                        matches.forEach(match => {
+                            if (Number(match.user_id) === Number(req.user.id)) return;
+                            db.query(
+                                "INSERT INTO notifications (user_id, item_id, title, message) VALUES (?, ?, ?, ?)",
+                                [match.user_id, result.insertId, "A possible item match was found", 'A new ' + reportType.toLowerCase() + ' report for "' + itemName.trim() + '" may match one of your reports.'],
+                                noticeError => { if (noticeError) console.error("Match notification error:", noticeError); }
+                            );
+                            db.query(
+                                "INSERT INTO notifications (user_id, item_id, title, message) VALUES (?, ?, ?, ?)",
+                                [req.user.id, match.id, "A possible item match was found", 'Your report for "' + itemName.trim() + '" may match a newly submitted campus report.'],
+                                noticeError => { if (noticeError) console.error("Match notification error:", noticeError); }
+                            );
+                        });
+                    }
+                );
+
                 res.status(201).json({
                     message: "Report submitted successfully!",
                     id: result.insertId
@@ -835,38 +902,26 @@ app.post(
     }
 );
 
-app.put(
-    "/api/items/:id/resolve",
-    authenticateToken,
-    checkAdmin,
-    (req, res) => {
-        const sql = `
-            UPDATE items
-            SET status = 'Resolved'
-            WHERE id = ?
-        `;
 
-        db.query(sql, [req.params.id], (error, result) => {
+app.put("/api/items/:id/resolve", authenticateToken, checkAdmin, (req, res) => {
+    db.query("SELECT user_id, item_name FROM items WHERE id = ?", [req.params.id], (findError, rows) => {
+        if (findError) return res.status(500).json({ message: "Could not find report." });
+        if (!rows.length) return res.status(404).json({ message: "Report not found." });
+        db.query("UPDATE items SET status = 'Resolved' WHERE id = ?", [req.params.id], (error, result) => {
             if (error) {
                 console.error("Resolve report database error:", error);
-
-                return res.status(500).json({
-                    message: "Could not update report."
-                });
+                return res.status(500).json({ message: "Could not update report." });
             }
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    message: "Report not found."
-                });
-            }
-
-            res.json({
-                message: "Item successfully marked as returned."
-            });
+            if (!result.affectedRows) return res.status(404).json({ message: "Report not found." });
+            db.query(
+                "INSERT INTO notifications (user_id, item_id, title, message) VALUES (?, ?, ?, ?)",
+                [rows[0].user_id, req.params.id, "Your item was marked as returned", 'The report for "' + rows[0].item_name + '" has been marked as returned by an administrator.'],
+                noticeError => { if (noticeError) console.error("Return notification error:", noticeError); }
+            );
+            res.json({ message: "Item successfully marked as returned." });
         });
-    }
-);
+    });
+});
 
 app.delete(
     "/api/items/:id",
