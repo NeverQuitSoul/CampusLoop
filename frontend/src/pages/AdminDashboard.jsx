@@ -72,7 +72,7 @@ function AdminDashboard() {
                 <article className="admin-stat-card"><span>Total reports</span><strong>{Number(data.stats.totalReports || 0)}</strong></article>
                 <article className="admin-stat-card"><span>Active reports</span><strong>{Number(data.stats.activeReports || 0)}</strong></article>
                 <article className="admin-stat-card"><span>Returned items</span><strong>{Number(data.stats.returnedReports || 0)}</strong></article>
-                <article className="admin-stat-card"><span>Registered users</span><strong>{data.users.length}</strong></article>
+                <article className="admin-stat-card"><span>Registered users</span><strong>{Number(data.stats.totalUsers || data.users.length)}</strong></article>
             </section>
 
             <section className="admin-panel">
