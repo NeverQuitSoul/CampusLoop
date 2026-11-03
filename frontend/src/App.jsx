@@ -11,12 +11,21 @@ import AdminLogin from "./pages/AdminLogin";
 import MyReports from "./pages/MyReports";
 import AdminDashboard from "./pages/AdminDashboard";
 import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
+import Messages from "./pages/Messages";
+import { useEffect, useState } from "react";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function AppContent() {
     const { user, logout } = useAuth();
+    const [darkMode, setDarkMode] = useState(() => localStorage.getItem("campusloop_theme") === "dark");
+
+    useEffect(() => {
+        document.documentElement.dataset.theme = darkMode ? "dark" : "light";
+        localStorage.setItem("campusloop_theme", darkMode ? "dark" : "light");
+    }, [darkMode]);
 
     return (
         <div className="app">
@@ -28,6 +37,8 @@ function AppContent() {
                     <Link to="/reports">Browse Reports</Link>
 
                     {user && <Link to="/notifications">Notifications</Link>}
+                    {user?.role === "student" && <Link to="/messages">Messages</Link>}
+                    {user && <Link to="/profile">Profile</Link>}
                     {user?.role === "admin" && <Link to="/admin/dashboard">Admin Dashboard</Link>}
 
                     {user?.role === "student" && (
@@ -44,6 +55,10 @@ function AppContent() {
                             <Link to="/admin/login">Admin Login</Link>
                         </>
                     )}
+
+                    <button type="button" className="theme-toggle" onClick={() => setDarkMode(value => !value)} aria-label="Toggle dark mode">
+                        {darkMode ? "☀ Light" : "☾ Dark"}
+                    </button>
 
                     {user && (
                         <>
@@ -85,6 +100,8 @@ function AppContent() {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/messages" element={<ProtectedRoute role="student"><Messages /></ProtectedRoute>} />
             </Routes>
 
             <footer>CampusLoop © 2026 | Helping our campus reconnect</footer>

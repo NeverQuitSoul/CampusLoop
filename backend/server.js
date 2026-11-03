@@ -79,6 +79,20 @@ db.query(`
     )
 `, (error) => { if (error) console.error("Notifications table setup failed:", error); });
 
+db.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        sender_id INT NOT NULL,
+        recipient_id INT NOT NULL,
+        item_id INT NOT NULL,
+        message TEXT NOT NULL,
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_messages_recipient (recipient_id, created_at),
+        INDEX idx_messages_sender (sender_id, created_at)
+    )
+`, (error) => { if (error) console.error("Messages table setup failed:", error); });
+
 db.getConnection((err, connection) => {
     if (err) {
         console.error("Database connection failed:", err);
@@ -468,8 +482,43 @@ app.post("/api/auth/admin-login", (req, res) => {
 });
 
 app.get("/api/auth/me", authenticateToken, (req, res) => {
-    res.json({
-        user: req.user
+    db.query(
+        "SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1",
+        [req.user.id],
+        (error, rows) => {
+            if (error) return res.status(500).json({ message: "Could not verify your account." });
+            if (!rows.length) return res.status(404).json({ message: "Account not found." });
+            res.json({ user: rows[0] });
+        }
+    );
+});
+
+app.get("/api/profile", authenticateToken, (req, res) => {
+    db.query(`
+        SELECT u.id, u.name, u.email, u.role,
+            (SELECT COUNT(*) FROM items WHERE user_id = u.id) AS totalReports,
+            (SELECT COUNT(*) FROM items WHERE user_id = u.id AND status = 'Active') AS activeReports,
+            (SELECT COUNT(*) FROM items WHERE user_id = u.id AND status = 'Resolved') AS returnedReports
+        FROM users u WHERE u.id = ? LIMIT 1
+    `, [req.user.id], (error, rows) => {
+        if (error) return res.status(500).json({ message: "Could not load your profile." });
+        if (!rows.length) return res.status(404).json({ message: "Profile not found." });
+        res.json(rows[0]);
+    });
+});
+
+app.put("/api/profile", authenticateToken, (req, res) => {
+    const name = String(req.body.name || "").trim();
+    if (name.length < 2 || name.length > 100) {
+        return res.status(400).json({ message: "Name must contain between 2 and 100 characters." });
+    }
+    db.query("UPDATE users SET name = ? WHERE id = ?", [name, req.user.id], (error, result) => {
+        if (error) return res.status(500).json({ message: "Could not update your profile." });
+        if (!result.affectedRows) return res.status(404).json({ message: "Account not found." });
+        db.query("SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1", [req.user.id], (readError, rows) => {
+            if (readError || !rows.length) return res.status(500).json({ message: "Profile updated, but could not reload it." });
+            res.json({ message: "Profile updated successfully.", user: rows[0] });
+        });
     });
 });
 
@@ -508,6 +557,106 @@ app.put("/api/notifications/:id/read", authenticateToken, (req, res) => {
     );
 });
 
+app.post("/api/messages", authenticateToken, (req, res) => {
+    if (req.user.role !== "student") return res.status(403).json({ message: "Only students can contact reporters." });
+    const itemId = Number(req.body.itemId);
+    const message = String(req.body.message || "").trim();
+    if (!Number.isInteger(itemId) || itemId <= 0 || message.length < 2 || message.length > 1500) {
+        return res.status(400).json({ message: "Enter a message between 2 and 1500 characters." });
+    }
+    db.query("SELECT id, user_id, item_name FROM items WHERE id = ? AND status <> 'Expired' LIMIT 1", [itemId], (findError, rows) => {
+        if (findError) return res.status(500).json({ message: "Could not find this report." });
+        if (!rows.length) return res.status(404).json({ message: "This report is no longer available." });
+        if (Number(rows[0].user_id) === Number(req.user.id)) {
+            return res.status(400).json({ message: "You cannot message yourself about your own report." });
+        }
+        db.query(
+            "INSERT INTO messages (sender_id, recipient_id, item_id, message) VALUES (?, ?, ?, ?)",
+            [req.user.id, rows[0].user_id, itemId, message],
+            (insertError, result) => {
+                if (insertError) return res.status(500).json({ message: "Could not send your message." });
+                db.query(
+                    "INSERT INTO notifications (user_id, item_id, title, message) VALUES (?, ?, ?, ?)",
+                    [rows[0].user_id, itemId, "New message about a report", "A student sent you a private message about " + rows[0].item_name + "."],
+                    noticeError => { if (noticeError) console.error("Message notification error:", noticeError); }
+                );
+                res.status(201).json({ message: "Message sent to the reporter.", id: result.insertId });
+            }
+        );
+    });
+});
+
+app.post("/api/messages/:id/reply", authenticateToken, (req, res) => {
+    if (req.user.role !== "student") return res.status(403).json({ message: "Only students can reply to messages." });
+    const message = String(req.body.message || "").trim();
+    if (message.length < 2 || message.length > 1500) {
+        return res.status(400).json({ message: "Enter a message between 2 and 1500 characters." });
+    }
+    db.query(
+        "SELECT sender_id, recipient_id, item_id FROM messages WHERE id = ? AND (sender_id = ? OR recipient_id = ?) LIMIT 1",
+        [req.params.id, req.user.id, req.user.id],
+        (findError, rows) => {
+            if (findError) return res.status(500).json({ message: "Could not find this conversation." });
+            if (!rows.length) return res.status(404).json({ message: "Message not found." });
+            const original = rows[0];
+            const recipientId = Number(original.sender_id) === Number(req.user.id)
+                ? original.recipient_id
+                : original.sender_id;
+            db.query(
+                "INSERT INTO messages (sender_id, recipient_id, item_id, message) VALUES (?, ?, ?, ?)",
+                [req.user.id, recipientId, original.item_id, message],
+                (insertError, result) => {
+                    if (insertError) return res.status(500).json({ message: "Could not send your reply." });
+                    db.query(
+                        "INSERT INTO notifications (user_id, item_id, title, message) VALUES (?, ?, ?, ?)",
+                        [recipientId, original.item_id, "New message reply", "You received a reply about a CampusLoop report."],
+                        noticeError => { if (noticeError) console.error("Reply notification error:", noticeError); }
+                    );
+                    res.status(201).json({ message: "Reply sent.", id: result.insertId });
+                }
+            );
+        }
+    );
+});
+
+app.get("/api/messages/inbox", authenticateToken, (req, res) => {
+    db.query(`
+        SELECT m.id, m.item_id, m.message, m.is_read, m.created_at,
+            u.name AS sender_name, i.item_name
+        FROM messages m
+        JOIN users u ON u.id = m.sender_id
+        JOIN items i ON i.id = m.item_id
+        WHERE m.recipient_id = ?
+        ORDER BY m.created_at DESC LIMIT 100
+    `, [req.user.id], (error, rows) => {
+        if (error) return res.status(500).json({ message: "Could not load your inbox." });
+        res.json(rows);
+    });
+});
+
+app.get("/api/messages/sent", authenticateToken, (req, res) => {
+    db.query(`
+        SELECT m.id, m.item_id, m.message, m.is_read, m.created_at,
+            u.name AS recipient_name, i.item_name
+        FROM messages m
+        JOIN users u ON u.id = m.recipient_id
+        JOIN items i ON i.id = m.item_id
+        WHERE m.sender_id = ?
+        ORDER BY m.created_at DESC LIMIT 100
+    `, [req.user.id], (error, rows) => {
+        if (error) return res.status(500).json({ message: "Could not load your sent messages." });
+        res.json(rows);
+    });
+});
+
+app.put("/api/messages/:id/read", authenticateToken, (req, res) => {
+    db.query("UPDATE messages SET is_read = 1 WHERE id = ? AND recipient_id = ?", [req.params.id, req.user.id], (error, result) => {
+        if (error) return res.status(500).json({ message: "Could not update this message." });
+        if (!result.affectedRows) return res.status(404).json({ message: "Message not found." });
+        res.json({ message: "Message marked as read." });
+    });
+});
+
 app.get("/api/admin/overview", authenticateToken, checkAdmin, async (req, res) => {
     try {
         const [statsRows] = await db.promise().query(`
@@ -520,6 +669,16 @@ app.get("/api/admin/overview", authenticateToken, checkAdmin, async (req, res) =
                 SUM(report_type = 'found') AS foundReports,
                 (SELECT COUNT(*) FROM users) AS totalUsers
             FROM items
+        `);
+        const [monthlyRows] = await db.promise().query(`
+            SELECT DATE_FORMAT(created_at, '%Y-%m') AS month,
+                   COUNT(*) AS total,
+                   SUM(report_type = 'lost') AS lost,
+                   SUM(report_type = 'found') AS found
+            FROM items
+            WHERE created_at >= DATE_SUB(CURRENT_DATE, INTERVAL 5 MONTH)
+            GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+            ORDER BY month ASC
         `);
         const [userRows] = await db.promise().query(`
             SELECT id, name, email, role
@@ -538,6 +697,7 @@ app.get("/api/admin/overview", authenticateToken, checkAdmin, async (req, res) =
         `);
         res.json({
             stats: statsRows[0],
+            monthlyReports: monthlyRows,
             users: userRows,
             reports: reportRows
         });

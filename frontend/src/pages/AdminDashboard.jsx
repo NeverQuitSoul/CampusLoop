@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 
 function AdminDashboard() {
     const { token } = useAuth();
-    const [data, setData] = useState({ stats: {}, users: [], reports: [] });
+    const [data, setData] = useState({ stats: {}, users: [], reports: [], monthlyReports: [] });
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [search, setSearch] = useState("");
@@ -105,6 +105,23 @@ function AdminDashboard() {
                         </tbody>
                     </table>
                 </div>
+            </section>
+
+            <section className="admin-panel analytics-panel">
+                <div className="admin-panel-heading"><div><span className="section-eyebrow">CAMPUS ACTIVITY</span><h2>Monthly report analytics</h2></div><span>Last 6 months</span></div>
+                {data.monthlyReports?.length ? (
+                    <div className="analytics-chart">
+                        {data.monthlyReports.map(month => {
+                            const max = Math.max(1, ...data.monthlyReports.map(entry => Number(entry.total || 0)));
+                            const total = Number(month.total || 0);
+                            return <div className="analytics-month" key={month.month}>
+                                <div className="analytics-bar-area"><div className="analytics-bar" style={{ height: Math.max(5, total / max * 100) + "%" }} title={total + " reports"}><span>{total}</span></div></div>
+                                <strong>{new Date(month.month + "-01T00:00:00").toLocaleDateString(undefined, { month: "short" })}</strong>
+                                <small>{Number(month.lost || 0)} lost · {Number(month.found || 0)} found</small>
+                            </div>;
+                        })}
+                    </div>
+                ) : <p className="analytics-empty">Monthly report activity will appear here as reports are submitted.</p>}
             </section>
 
             <section className="admin-panel">

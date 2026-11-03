@@ -57,6 +57,10 @@ export function AuthProvider({ children }) {
         setUser(loginUser);
     }
 
+    function updateUser(updatedUser) {
+        setUser(updatedUser);
+    }
+
     function logout() {
         localStorage.removeItem("campusloop_token");
         setToken(null);
@@ -70,6 +74,7 @@ export function AuthProvider({ children }) {
                 user,
                 authLoading,
                 login,
+                updateUser,
                 logout
             }}
         >
