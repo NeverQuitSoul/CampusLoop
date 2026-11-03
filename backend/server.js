@@ -832,48 +832,40 @@ app.put(
 app.delete(
     "/api/items/:id",
     authenticateToken,
-    checkAdmin,
     (req, res) => {
-        const selectSql = `
-            SELECT image_path
-            FROM items
-            WHERE id = ?
-        `;
+        const isStudent = req.user.role === "student";
+        if (!isStudent && req.user.role !== "admin") {
+            return res.status(403).json({ message: "You are not allowed to delete reports." });
+        }
 
-        db.query(selectSql, [req.params.id], (selectError, results) => {
+        const selectSql = isStudent
+            ? "SELECT image_path FROM items WHERE id = ? AND user_id = ? AND status IN ('Active', 'Expired')"
+            : "SELECT image_path FROM items WHERE id = ?";
+        const values = isStudent ? [req.params.id, req.user.id] : [req.params.id];
+
+        db.query(selectSql, values, (selectError, rows) => {
             if (selectError) {
                 console.error("Find report before delete error:", selectError);
-
-                return res.status(500).json({
-                    message: "Could not find report."
-                });
+                return res.status(500).json({ message: "Could not find report." });
+            }
+            if (!rows.length) {
+                return res.status(404).json({ message: "Report not found or cannot be deleted." });
             }
 
-            if (results.length === 0) {
-                return res.status(404).json({
-                    message: "Report not found."
-                });
-            }
-
-            const imagePath = results[0].image_path;
-
-            const deleteSql = "DELETE FROM items WHERE id = ?";
-
-            db.query(deleteSql, [req.params.id], (deleteError) => {
-                if (deleteError) {
-                    console.error("Delete report database error:", deleteError);
-
-                    return res.status(500).json({
-                        message: "Could not delete report."
-                    });
+            db.query(
+                isStudent
+                    ? "DELETE FROM items WHERE id = ? AND user_id = ? AND status IN ('Active', 'Expired')"
+                    : "DELETE FROM items WHERE id = ?",
+                values,
+                (deleteError) => {
+                    if (deleteError) {
+                        console.error("Delete report database error:", deleteError);
+                        return res.status(500).json({ message: "Could not delete report." });
+                    }
+                    removeStoredImage(rows[0].image_path);
+                    res.json({ message: "Report deleted successfully." });
                 }
-
-                removeStoredImage(imagePath);
-
-                res.json({
-                    message: "Report deleted successfully."
-                });
-            });
+            );
         });
     }
 );
