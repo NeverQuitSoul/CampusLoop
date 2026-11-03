@@ -2,6 +2,17 @@
 
 CampusLoop is a college Lost & Found web application that helps students report lost or found belongings, browse reports, contact other students, and track the status of reported items. Administrators can manage reports and monitor platform activity.
 
+## Problem Statement
+
+Students may find it difficult to report lost belongings or connect with someone who has found an item on campus. CampusLoop provides one central place to publish and browse Lost and Found reports.
+
+## Project Objectives
+
+- Make it easier for students to report lost and found items.
+- Help students search and view reports in one place.
+- Allow students to contact each other about reported items.
+- Help administrators monitor reports and update their status.
+
 ## Live Project
 
 - **Website:** https://neverquitsoul.github.io/CampusLoop/
