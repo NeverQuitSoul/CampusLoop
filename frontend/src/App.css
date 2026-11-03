@@ -3164,3 +3164,6 @@ footer {
 :root[data-theme="dark"] .report-details-page,:root[data-theme="dark"] .reports-page,:root[data-theme="dark"] .my-reports-page,:root[data-theme="dark"] .notifications-page,:root[data-theme="dark"] .admin-dashboard-page,:root[data-theme="dark"] .messages-page,:root[data-theme="dark"] .profile-page{color:var(--text)}
 :root[data-theme="dark"] footer{background:#1d1c2a;color:#aaa8bf}
 @media(max-width:700px){.profile-stats{grid-template-columns:1fr}.analytics-chart{gap:5px}.analytics-month>small{font-size:8px}.message-card-top{flex-direction:column}.theme-toggle{padding:8px;font-size:10px}}
+
+.message-reply-form{display:grid;gap:9px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border)}.message-reply-form textarea{width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);resize:vertical}.message-reply-form button{justify-self:end;padding:9px 13px;border:0;border-radius:7px;background:var(--purple);color:white;font-size:11px;font-weight:800}.message-reply-form button:disabled{opacity:.6}
+:root[data-theme="dark"] .message-reply-form textarea{background:#242333;color:var(--text);border-color:var(--border)}
