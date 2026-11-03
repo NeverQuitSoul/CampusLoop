@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import AdminLogin from "./pages/AdminLogin";
 import MyReports from "./pages/MyReports";
 import AdminDashboard from "./pages/AdminDashboard";
+import Notifications from "./pages/Notifications";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -26,6 +27,7 @@ function AppContent() {
                     <Link to="/">Home</Link>
                     <Link to="/reports">Browse Reports</Link>
 
+                    {user && <Link to="/notifications">Notifications</Link>}
                     {user?.role === "admin" && <Link to="/admin/dashboard">Admin Dashboard</Link>}
 
                     {user?.role === "student" && (
@@ -82,6 +84,7 @@ function AppContent() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             </Routes>
 
             <footer>CampusLoop © 2026 | Helping our campus reconnect</footer>
