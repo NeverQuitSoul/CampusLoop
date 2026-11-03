@@ -10,6 +10,9 @@ function Messages() {
     const [sent, setSent] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [replyingId, setReplyingId] = useState(null);
+    const [replyText, setReplyText] = useState("");
+    const [sendingReply, setSendingReply] = useState(false);
 
     const loadMessages = useCallback(async () => {
         setLoading(true);
@@ -33,6 +36,29 @@ function Messages() {
     }, [token]);
 
     useEffect(() => { loadMessages(); }, [loadMessages]);
+
+    async function sendReply(event, id) {
+        event.preventDefault();
+        if (!replyText.trim() || sendingReply) return;
+        setSendingReply(true);
+        setError("");
+        try {
+            const response = await fetch(API_URL + "/api/messages/" + id + "/reply", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+                body: JSON.stringify({ message: replyText })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Could not send reply.");
+            setReplyText("");
+            setReplyingId(null);
+            await loadMessages();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSendingReply(false);
+        }
+    }
 
     async function markRead(id) {
         try {
@@ -68,7 +94,17 @@ function Messages() {
                         <div className="message-card-top"><strong>{folder === "inbox" ? "From: " + message.sender_name : "To: " + message.recipient_name}</strong><time>{message.created_at ? new Date(message.created_at).toLocaleString() : ""}</time></div>
                         <p className="message-item-label">Regarding: {message.item_name}</p>
                         <p>{message.message}</p>
-                        <div className="message-card-actions"><Link to={"/reports/" + message.item_id}>View report</Link>{folder === "inbox" && !message.is_read && <button onClick={() => markRead(message.id)}>Mark as read</button>}</div>
+                        <div className="message-card-actions">
+                            <Link to={"/reports/" + message.item_id}>View report</Link>
+                            {folder === "inbox" && !message.is_read && <button onClick={() => markRead(message.id)}>Mark as read</button>}
+                            {folder === "inbox" && <button onClick={() => { setReplyingId(replyingId === message.id ? null : message.id); setReplyText(""); }}>Reply</button>}
+                        </div>
+                        {folder === "inbox" && replyingId === message.id && (
+                            <form className="message-reply-form" onSubmit={event => sendReply(event, message.id)}>
+                                <textarea rows="3" maxLength="1500" value={replyText} onChange={event => setReplyText(event.target.value)} placeholder="Write your reply..." required />
+                                <button type="submit" disabled={sendingReply}>{sendingReply ? "Sending..." : "Send Reply"}</button>
+                            </form>
+                        )}
                     </article>)}
                 </section>
             )}
