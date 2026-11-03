@@ -464,6 +464,45 @@ app.get("/", (req, res) => {
     res.send("CampusLoop Backend is running!");
 });
 
+
+app.get("/api/admin/overview", authenticateToken, checkAdmin, async (req, res) => {
+    try {
+        const [statsRows] = await db.promise().query(`
+            SELECT
+                COUNT(*) AS totalReports,
+                SUM(status = 'Active') AS activeReports,
+                SUM(status = 'Expired') AS expiredReports,
+                SUM(status = 'Resolved') AS returnedReports,
+                SUM(report_type = 'lost') AS lostReports,
+                SUM(report_type = 'found') AS foundReports
+            FROM items
+        `);
+        const [userRows] = await db.promise().query(`
+            SELECT id, name, email, role
+            FROM users
+            ORDER BY id DESC
+            LIMIT 100
+        `);
+        const [reportRows] = await db.promise().query(`
+            SELECT i.id, i.report_type, i.item_name, i.location, i.status,
+                   i.created_at, i.expires_at, u.name AS reporter_name,
+                   u.email AS reporter_email
+            FROM items i
+            LEFT JOIN users u ON u.id = i.user_id
+            ORDER BY i.created_at DESC
+            LIMIT 100
+        `);
+        res.json({
+            stats: statsRows[0],
+            users: userRows,
+            reports: reportRows
+        });
+    } catch (error) {
+        console.error("Admin overview error:", error);
+        res.status(500).json({ message: "Could not load administrator dashboard." });
+    }
+});
+
 app.get("/api/items", (req, res) => {
     const sql = `
         SELECT ${publicItemFields}
