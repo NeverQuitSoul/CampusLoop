@@ -538,7 +538,7 @@ app.get("/api/items/completed", (req, res) => {
 
 app.get("/api/items/mine", authenticateToken, (req, res) => {
     const sql = `
-        SELECT ${publicItemFields}
+        SELECT ${publicItemFields}, contact
         FROM items
         WHERE user_id = ?
         ORDER BY created_at DESC
