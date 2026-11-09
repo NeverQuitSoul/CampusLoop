@@ -12,6 +12,8 @@ function Register() {
         confirmPassword: ""
     });
 
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -61,6 +63,19 @@ function Register() {
         }
     }
 
+    const visibilityButtonStyle = {
+        position: "absolute",
+        right: "12px",
+        top: "50%",
+        transform: "translateY(-50%)",
+        border: "none",
+        background: "transparent",
+        padding: "4px",
+        cursor: "pointer",
+        color: "inherit",
+        fontSize: "13px"
+    };
+
     return (
         <div className="auth-container">
             <div className="auth-card">
@@ -95,27 +110,49 @@ function Register() {
 
                     <label>Password</label>
 
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Create a password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        minLength="8"
-                        required
-                    />
+                    <div style={{ position: "relative" }}>
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            placeholder="Create a password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            minLength="8"
+                            required
+                            style={{ paddingRight: "65px" }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(value => !value)}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            style={visibilityButtonStyle}
+                        >
+                            {showPassword ? "Hide" : "Show"}
+                        </button>
+                    </div>
 
                     <label>Confirm Password</label>
 
-                    <input
-                        type="password"
-                        name="confirmPassword"
-                        placeholder="Enter password again"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        minLength="8"
-                        required
-                    />
+                    <div style={{ position: "relative" }}>
+                        <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            name="confirmPassword"
+                            placeholder="Enter password again"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            minLength="8"
+                            required
+                            style={{ paddingRight: "65px" }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(value => !value)}
+                            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                            style={visibilityButtonStyle}
+                        >
+                            {showConfirmPassword ? "Hide" : "Show"}
+                        </button>
+                    </div>
 
                     <button type="submit" disabled={loading}>
                         {loading ? "Creating Account..." : "Register"}
