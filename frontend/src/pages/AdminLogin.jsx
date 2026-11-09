@@ -112,7 +112,11 @@ function AdminLogin() {
                                 background: "transparent",
                                 padding: "4px",
                                 cursor: "pointer",
-                                color: "inherit"
+                                color: "inherit",
+                                width: "auto",
+                                minWidth: "0",
+                                margin: "0",
+                                borderRadius: "0"
                             }}
                         >
                             <PasswordEye visible={showPassword} />
