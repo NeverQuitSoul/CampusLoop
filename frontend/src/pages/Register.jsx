@@ -83,18 +83,6 @@ function Register() {
         }
     }
 
-    const visibilityButtonStyle = {
-        position: "absolute",
-        right: "10px",
-        top: "50%",
-        transform: "translateY(-50%)",
-        border: "none",
-        background: "transparent",
-        padding: "4px",
-        cursor: "pointer",
-        color: "inherit",
-    };
-
     return (
         <div className="auth-container">
             <div className="auth-card">
@@ -129,7 +117,7 @@ function Register() {
 
                     <label>Password</label>
 
-                    <div style={{ position: "relative" }}>
+                    <div className="password-field">
                         <input
                             type={showPassword ? "text" : "password"}
                             name="password"
@@ -141,10 +129,11 @@ function Register() {
                             style={{ paddingRight: "44px" }}
                         />
                         <button
+                            className="password-toggle"
                             type="button"
                             onClick={() => setShowPassword(value => !value)}
                             aria-label={showPassword ? "Hide password" : "Show password"}
-                            style={visibilityButtonStyle}
+                            
                         >
                             <PasswordEye visible={showPassword} />
                         </button>
@@ -164,6 +153,7 @@ function Register() {
                             style={{ paddingRight: "65px" }}
                         />
                         <button
+                            className="password-toggle"
                             type="button"
                             onClick={() => setShowConfirmPassword(value => !value)}
                             aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
