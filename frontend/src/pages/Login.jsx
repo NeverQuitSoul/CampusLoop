@@ -82,37 +82,14 @@ function Login() {
 
                     <label>Password</label>
 
-                    <div style={{ position: "relative" }}>
+                    <div className="password-field">
                         <input
                             type={showPassword ? "text" : "password"}
                             placeholder="Enter your password"
                             value={password}
                             onChange={event => setPassword(event.target.value)}
                             required
-                            style={{ paddingRight: "44px" }}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(value => !value)}
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                            style={{
-                                position: "absolute",
-                                right: "10px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                border: "none",
-                                background: "transparent",
-                                padding: "4px",
-                                cursor: "pointer",
-                                color: "inherit",
-                                width: "auto",
-                                minWidth: "0",
-                                margin: "0",
-                                borderRadius: "0"
-                            }}
+                            
                         >
                             <PasswordEye visible={showPassword} />
                         </button>
