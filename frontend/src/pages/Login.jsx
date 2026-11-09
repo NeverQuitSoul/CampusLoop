@@ -3,6 +3,26 @@ import { Link, useNavigate } from "react-router-dom";
 import { API_URL } from "../api";
 import { useAuth } from "../context/AuthContext";
 
+function PasswordEye({ visible }) {
+    return (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+            <circle cx="12" cy="12" r="3" />
+            {!visible && <path d="m3 3 18 18" />}
+        </svg>
+    );
+}
+
 function Login() {
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -69,7 +89,7 @@ function Login() {
                             value={password}
                             onChange={event => setPassword(event.target.value)}
                             required
-                            style={{ paddingRight: "65px" }}
+                            style={{ paddingRight: "44px" }}
                         />
                         <button
                             type="button"
@@ -77,18 +97,20 @@ function Login() {
                             aria-label={showPassword ? "Hide password" : "Show password"}
                             style={{
                                 position: "absolute",
-                                right: "12px",
+                                right: "10px",
                                 top: "50%",
                                 transform: "translateY(-50%)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
                                 border: "none",
                                 background: "transparent",
                                 padding: "4px",
                                 cursor: "pointer",
-                                color: "inherit",
-                                fontSize: "13px"
+                                color: "inherit"
                             }}
                         >
-                            {showPassword ? "Hide" : "Show"}
+                            <PasswordEye visible={showPassword} />
                         </button>
                     </div>
 
