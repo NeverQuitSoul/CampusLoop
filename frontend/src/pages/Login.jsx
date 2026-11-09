@@ -9,6 +9,7 @@ function Login() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -61,13 +62,35 @@ function Login() {
 
                     <label>Password</label>
 
-                    <input
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={event => setPassword(event.target.value)}
-                        required
-                    />
+                    <div style={{ position: "relative" }}>
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={event => setPassword(event.target.value)}
+                            required
+                            style={{ paddingRight: "65px" }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(value => !value)}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            style={{
+                                position: "absolute",
+                                right: "12px",
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                border: "none",
+                                background: "transparent",
+                                padding: "4px",
+                                cursor: "pointer",
+                                color: "inherit",
+                                fontSize: "13px"
+                            }}
+                        >
+                            {showPassword ? "Hide" : "Show"}
+                        </button>
+                    </div>
 
                     <button type="submit" disabled={loading}>
                         {loading ? "Logging in..." : "Login"}
