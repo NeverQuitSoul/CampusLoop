@@ -3167,3 +3167,51 @@ footer {
 
 .message-reply-form{display:grid;gap:9px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border)}.message-reply-form textarea{width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);resize:vertical}.message-reply-form button{justify-self:end;padding:9px 13px;border:0;border-radius:7px;background:var(--purple);color:white;font-size:11px;font-weight:800}.message-reply-form button:disabled{opacity:.6}
 :root[data-theme="dark"] .message-reply-form textarea{background:#242333;color:var(--text);border-color:var(--border)}
+
+
+/* Password visibility control: keep the eye at the far right of the input. */
+.auth-card .password-field {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.auth-card .password-field input {
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 48px;
+}
+
+.auth-card .password-field .password-toggle {
+    position: absolute !important;
+    top: 50% !important;
+    right: 10px !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 4px !important;
+    background: transparent !important;
+    color: #777 !important;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.auth-card .password-field .password-toggle:hover {
+    background: transparent !important;
+    color: var(--purple) !important;
+}
+
+.auth-card .password-field .password-toggle svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+}
