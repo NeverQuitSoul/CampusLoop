@@ -2,6 +2,26 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_URL } from "../api";
 
+function PasswordEye({ visible }) {
+    return (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+            <circle cx="12" cy="12" r="3" />
+            {!visible && <path d="m3 3 18 18" />}
+        </svg>
+    );
+}
+
 function Register() {
     const navigate = useNavigate();
 
@@ -65,7 +85,7 @@ function Register() {
 
     const visibilityButtonStyle = {
         position: "absolute",
-        right: "12px",
+        right: "10px",
         top: "50%",
         transform: "translateY(-50%)",
         border: "none",
@@ -73,7 +93,6 @@ function Register() {
         padding: "4px",
         cursor: "pointer",
         color: "inherit",
-        fontSize: "13px"
     };
 
     return (
@@ -119,7 +138,7 @@ function Register() {
                             onChange={handleChange}
                             minLength="8"
                             required
-                            style={{ paddingRight: "65px" }}
+                            style={{ paddingRight: "44px" }}
                         />
                         <button
                             type="button"
@@ -127,7 +146,7 @@ function Register() {
                             aria-label={showPassword ? "Hide password" : "Show password"}
                             style={visibilityButtonStyle}
                         >
-                            {showPassword ? "Hide" : "Show"}
+                            <PasswordEye visible={showPassword} />
                         </button>
                     </div>
 
@@ -150,7 +169,7 @@ function Register() {
                             aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                             style={visibilityButtonStyle}
                         >
-                            {showConfirmPassword ? "Hide" : "Show"}
+                            <PasswordEye visible={showConfirmPassword} />
                         </button>
                     </div>
 
