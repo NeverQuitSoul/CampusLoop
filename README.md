@@ -60,7 +60,7 @@ CampusLoop/
 │   ├── package.json
 │   └── server.js
 ├── docs/
-│   ├── CampusLoop_Presentation.pptx
+│   ├── CampusLoop.pptx
 │   └── README.md
 ├── frontend/
 │   ├── public/
@@ -171,4 +171,4 @@ The frontend API configuration is in `frontend/src/api.js`. If deployment URLs c
 
 ## Project Presentation
 
-See [CampusLoop Presentation](docs/CampusLoop_Presentation.pptx) in the `docs` folder.
+See [CampusLoop Presentation](docs/CampusLoop.pptx) in the `docs` folder.
